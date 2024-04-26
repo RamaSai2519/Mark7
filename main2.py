@@ -242,7 +242,7 @@ def main():
 
         for call in successful_calls:
             if "Conversation Score" not in call and call.get("recording_url") not in [
-                None,
+                "None",
                 "",
             ]:
                 user_document = db.users.find_one({"_id": call["user"]})
