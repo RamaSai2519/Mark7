@@ -18,8 +18,8 @@ genai.configure(api_key="AIzaSyC7GliarMdf_jCp6SbKpfzjGwW1IdgFKws")
 client = OpenAI(api_key="sk-proj-aKKDe91pGa2k6HMxYksiT3BlbkFJfijdRZELYUustkm8biLd")
 
 
-def process_call_data(call_data, user, expert, database, user_id):
-    customer_persona = user_id.get("Customer Persona", "None")
+def process_call_data(call_data, user, expert, database, usercallId):
+    customer_persona = usercallId.get("Customer Persona", "None")
 
     for call in call_data:
 
@@ -36,9 +36,9 @@ def process_call_data(call_data, user, expert, database, user_id):
 
         sentiment = get_tonality_sentiment(transcript)
 
-        transcript_url = upload_transcript(call["_id"])
+        transcript_url = upload_transcript(transcript, call["callId"])
 
-        update_query = {"_id": user_id["_id"]}
+        update_query = {"callId": usercallId["callId"]}
         update_values = {"$set": {"Customer Persona": customer_persona}}
         database.users.update_one(update_query, update_values)
 
@@ -73,8 +73,7 @@ def download_audio(data, filename):
 
 
 def process_call_recording(document, user, expert, persona):
-    # Download audio file
-    audio_filename = f"{document['_id']}.mp3"
+    audio_filename = f"{document['callId']}.mp3"
     download_audio(document, audio_filename)
     audio_file = open(audio_filename, "rb")
     try:
@@ -87,8 +86,7 @@ def process_call_recording(document, user, expert, persona):
             translation.text
             + f"\n This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis)."
         )
-        with open(f"{document['_id']}.txt", "w", encoding="utf-8") as file:
-            file.write(transcript)
+
         audio_file.close()
         os.remove(audio_filename)
     except Exception as e:
@@ -100,12 +98,6 @@ def process_call_recording(document, user, expert, persona):
         print(error_message)
         socket.emit("error_notification", error_message)
         return None
-    audio_file.close()
-    os.remove(audio_filename)
-
-    # Load txt
-    # with open("6617b5c246539684a77ac75e.txt", "r", encoding="utf-8") as file:
-    #     transcript = file.read()
 
     # Model intitalization with context
     model = genai.GenerativeModel("gemini-pro")
@@ -232,6 +224,7 @@ def process_call_recording(document, user, expert, persona):
 
     except Exception as e:
         print(3)
+        print(e)
         socket.emit("An error occurred while processing the call:", str(e))
         return e
 
@@ -253,9 +246,9 @@ def main():
         for change in stream:
             call = change["fullDocument"]
             if user_document is None:
-                user_document = db.users.find_one({"_id": call["user"]})
+                user_document = db.users.find_one({"callId": call["user"]})
             if expert_document is None:
-                expert_document = db.experts.find_one({"_id": call["expert"]})
+                expert_document = db.experts.find_one({"callId": call["expert"]})
             user = user_document["name"]
             expert = expert_document["name"]
             try:
@@ -264,6 +257,7 @@ def main():
             except Exception as e:
                 error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
                 socket.emit("error_notification", error_message)
+                print(error_message)
                 print("call not processed")
 
 
