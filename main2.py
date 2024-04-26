@@ -232,39 +232,33 @@ def process_call_recording(document, user, expert, persona):
 
 
 def main():
-    # Connect to MongoDB
     db_uri = "mongodb+srv://sukoon_user:Tcks8x7wblpLL9OA@cluster0.o7vywoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
     client = pymongo.MongoClient(db_uri)
     db = client.test
 
     while True:
-        successful_calls = list(db.calls.find(
-            {"status": "successfull", "Conversation Score": {"$exists": False}}
-        ))
-        print(len(successful_calls))
-
-        user_document = None
-        expert_document = None
-
-        if len(successful_calls) == 0:
-            print("No successful calls found. Sleeping for 1 hour...")
-            time.sleep(24*3600)
-            continue
+        # Get successful calls
+        successful_calls = db.calls.find({"status": "successfull"})
 
         for call in successful_calls:
-            if user_document is None:
+            if "Conversation Score" not in call and call.get("recording_url") not in [
+                None,
+                "",
+            ]:
                 user_document = db.users.find_one({"_id": call["user"]})
-            if expert_document is None:
                 expert_document = db.experts.find_one({"_id": call["expert"]})
-            user = user_document["name"]
-            expert = expert_document["name"]
-            try:
-                process_call_data([call], user, expert, db, user_document)
-                print("call processed")
-            except Exception as e:
-                error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
-                socket.emit("error_notification", error_message)
-                print(f"call not processed \n {str(e)}")
+                user = user_document["name"]
+                expert = expert_document["name"]
+                try:
+                    process_call_data([call], user, expert, db, user_document)
+                    print("call processed")
+                except Exception as e:
+                    error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
+                    socket.emit("error_notification", error_message)
+                    print(f"call not processed \n {str(e)}")
+
+        print("Processed all calls. Sleeping for 1 hour...")
+        time.sleep(3600)
 
 
 if __name__ == "__main__":
