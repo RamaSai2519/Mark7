@@ -12,8 +12,7 @@ import socketio
 import os
 import time
 
-max_retries = 3
-retry_interval_seconds = 3600
+retry_interval_seconds = 43200
 
 socket = socketio.Client()
 socket.connect("http://15.206.127.248/")
