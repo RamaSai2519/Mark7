@@ -273,7 +273,7 @@ def schedule_main():
     # Convert IST to system's timezone
     ist = timezone("Asia/Kolkata")
     now = datetime.datetime.now(ist)
-    schedule_time = now.replace(hour=22, minute=00, second=0, microsecond=0)
+    schedule_time = now.replace(hour=2, minute=26, second=0, microsecond=0)
 
     # Schedule the main function
     schedule.every().day.at(schedule_time.strftime("%H:%M")).do(main)
