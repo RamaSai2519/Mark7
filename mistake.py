@@ -26,25 +26,25 @@ users = db["users"]
 }
 
 document = {
-    "callId": "a441a92e-9fbb-4458-b4bf-77e72e31c794",
+    "callId": "410c6294-f409-40c7-bd2c-61c125ffd9a6",
     "status": "successfull",
-    "initiatedTime": datetime.datetime(2024, 4, 26, 7, 4, 21, 370000),
-    "duration": "0:04:10",
-    "transferDuration": "00:03:47",
-    "recording_url": "https://sr.knowlarity.com/vr/fetchsound/?callid%3Da441a92e-9fbb-4458-b4bf-77e72e31c794",
+    "initiatedTime": datetime.datetime(2024, 4, 26, 4, 24, 13, 926000),
+    "duration": "0:16:45",
+    "transferDuration": "00:16:37",
+    "recording_url": "https://sr.knowlarity.com/vr/fetchsound/?callid%3D410c6294-f409-40c7-bd2c-61c125ffd9a6",
     "failedReason": "",
-    "expert": ObjectId("66046a3d42f04a057fa21034"),
-    "user": ObjectId("66178da6a6eca419e5884569"),
+    "expert": ObjectId("6604665042f04a057fa20ddc"),
+    "user": ObjectId("661526bc6159273a018e7b89"),
     "__v": 0,
 }
 
-# collection.insert_one(document)
+collection.insert_one(document)
 print("Document inserted successfully.")
 
 sleep(5)
 
-# collection.delete_one({"callId": "a441a92e-9fbb-4458-b4bf-77e72e31c794"})
+collection.delete_one({"callId": "410c6294-f409-40c7-bd2c-61c125ffd9a6"})
 print("Document deleted successfully.")
 
-calls = list((collection.find({"callId": "a441a92e-9fbb-4458-b4bf-77e72e31c794"})))
-pprint.pprint(calls)
+# calls = list((collection.find({"callId": "410c6294-f409-40c7-bd2c-61c125ffd9a6"})))
+# pprint.pprint(calls)
