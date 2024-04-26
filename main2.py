@@ -77,42 +77,30 @@ def download_audio(data, filename):
 
 
 def process_call_recording(document, user, expert, persona):
-    retries = 0
     audio_filename = f"{document['callId']}.mp3"
     download_audio(document, audio_filename)
     audio_file = open(audio_filename, "rb")
-    while retries < max_retries:
-        try:
-            translation = client.audio.translations.create(
-                model="whisper-1",
-                file=audio_file,
-                prompt=f"This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis).",
-            )
-            transcript = (
-                translation.text
-                + f"\n This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis)."
-            )
-            audio_file.close()
-            os.remove(audio_filename)
-        except Exception as e:
-            retries += 1
-            if retries == max_retries:
-                audio_file.close()
-                os.remove(audio_filename)
-                error_message = (
-                    f"An error occurred processing the call ({document['callId']}): {str(e)}"
-                )
-                socket.emit("error_notification", error_message)
-                return None
-            else:
-                error_message = (
-                    f"An error occurred processing the call ({document['callId']}): {str(e)}"
-                )
-                socket.emit("error_notification", error_message)
-                socket.emit(f"Retrying after {retry_interval_seconds / 60} minutes...")
-                time.sleep(retry_interval_seconds)
+    try:
+        translation = client.audio.translations.create(
+            model="whisper-1",
+            file=audio_file,
+            prompt=f"This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis).",
+        )
+        transcript = (
+            translation.text
+            + f"\n This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis)."
+        )
+    except Exception as e:
+        error_message = (
+            f"An error occurred processing the call ({document['callId']}): {str(e)}"
+        )
+        socket.emit("error_notification", error_message)
+        print(error_message)
+        socket.emit(f"Retrying after {retry_interval_seconds / 60} minutes...")
+        time.sleep(retry_interval_seconds)
 
-
+    audio_file.close()
+    os.remove(audio_filename)
     # Model intitalization with context
     model = genai.GenerativeModel("gemini-pro")
     chat = model.start_chat(history=[])
@@ -253,19 +241,24 @@ def main():
         successful_calls = db.calls.find({"status": "successfull"})
 
         for call in successful_calls:
-            if "Conversation Score" not in call and call.get("recording_url") not in ["None", ""]:
-                        try:
-                            user_document = db.users.find_one({"_id": call.get("user", "")})
-                            expert_document = db.experts.find_one({"_id": call.get("expert", "")})
-                            user = user_document["name"]
-                            expert = expert_document["name"]
-                            process_call_data([call], user, expert, db, user_document)
-                            print("call processed")
-                            updater()
-                        except Exception as e:
-                            error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
-                            socket.emit("error_notification", error_message)
-                            print(f"call not processed \n {str(e)}")
+            if "Conversation Score" not in call and call.get("recording_url") not in [
+                "None",
+                "",
+            ]:
+                try:
+                    user_document = db.users.find_one({"_id": call.get("user", "")})
+                    expert_document = db.experts.find_one(
+                        {"_id": call.get("expert", "")}
+                    )
+                    user = user_document["name"]
+                    expert = expert_document["name"]
+                    process_call_data([call], user, expert, db, user_document)
+                    print("call processed")
+                    updater()
+                except Exception as e:
+                    error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
+                    socket.emit("error_notification", error_message)
+                    print(f"call not processed \n {str(e)}")
 
         print("Processed all calls. Sleeping for 1 hour...")
         time.sleep(3600)

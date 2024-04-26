@@ -12,7 +12,6 @@ import socketio
 import os
 import time
 
-max_retries = 3
 retry_interval_seconds = 3600
 
 socket = socketio.Client()
@@ -77,38 +76,30 @@ def download_audio(data, filename):
 
 
 def process_call_recording(document, user, expert, persona):
-    retries = 0
     audio_filename = f"{document['callId']}.mp3"
     download_audio(document, audio_filename)
     audio_file = open(audio_filename, "rb")
-    while retries < max_retries:
-        try:
-            translation = client.audio.translations.create(
-                model="whisper-1",
-                file=audio_file,
-                prompt=f"This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis).",
-            )
-            transcript = (
-                translation.text
-                + f"\n This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis)."
-            )
-            audio_file.close()
-            os.remove(audio_filename)
-        except Exception as e:
-            retries += 1
-            if retries == max_retries:
-                audio_file.close()
-                os.remove(audio_filename)
-                error_message = f"An error occurred processing the call ({document['callId']}): {str(e)}"
-                socket.emit("error_notification", error_message)
-                return None
-            else:
-                error_message = f"An error occurred processing the call ({document['callId']}): {str(e)}"
-                socket.emit("error_notification", error_message)
-                socket.emit(f"Retrying after {retry_interval_seconds / 60} minutes...")
-                time.sleep(retry_interval_seconds)
+    try:
+        translation = client.audio.translations.create(
+            model="whisper-1",
+            file=audio_file,
+            prompt=f"This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis).",
+        )
+        transcript = (
+            translation.text
+            + f"\n This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis)."
+        )
+    except Exception as e:
+        error_message = (
+            f"An error occurred processing the call ({document['callId']}): {str(e)}"
+        )
+        socket.emit("error_notification", error_message)
+        print(error_message)
+        socket.emit(f"Retrying after {retry_interval_seconds / 60} minutes...")
+        time.sleep(retry_interval_seconds)
 
-    # Model intitalization with context
+    audio_file.close()
+    os.remove(audio_filename)
     model = genai.GenerativeModel("gemini-pro")
     chat = model.start_chat(history=[])
     chat.send_message(
