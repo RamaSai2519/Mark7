@@ -1,0 +1,6 @@
+google-generativeai
+openai
+pymongo
+python-socketio
+requests
+schedule

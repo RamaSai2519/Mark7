@@ -9,30 +9,36 @@ from upload_transcript import upload_transcript
 import pymongo
 import socketio
 import os
+import time
+import schedule
+from pytz import timezone
+import datetime
+
 
 socket = socketio.Client()
 socket.connect("http://15.206.127.248/")
 
 genai.configure(api_key="AIzaSyC7GliarMdf_jCp6SbKpfzjGwW1IdgFKws")
-
 client = OpenAI(api_key="sk-proj-aKKDe91pGa2k6HMxYksiT3BlbkFJfijdRZELYUustkm8biLd")
 
 
+# Remove the MongoDB change stream setup and the main function, and modify the process_call_data function to accept a list of calls instead of a single call
 def process_call_data(call_data, user, expert, database, user_id):
     customer_persona = user_id.get("Customer Persona", "None")
 
     for call in call_data:
-
-        (
-            transcript,
-            summary,
-            conversation_score,
-            conversation_score_details,
-            saarthi_feedback,
-            customer_persona,
-            user_callback,
-            topics,
-        ) = process_call_recording(call, user, expert, customer_persona)
+        # Check if 'Conversation Score' key is not present
+        if "Conversation Score" not in call:
+            (
+                transcript,
+                summary,
+                conversation_score,
+                conversation_score_details,
+                saarthi_feedback,
+                customer_persona,
+                user_callback,
+                topics,
+            ) = process_call_recording(call, user, expert, customer_persona)
 
         sentiment = get_tonality_sentiment(transcript)
 
@@ -237,35 +243,47 @@ def process_call_recording(document, user, expert, persona):
 
 
 def main():
+    # Connect to MongoDB
     db_uri = "mongodb+srv://sukoon_user:Tcks8x7wblpLL9OA@cluster0.o7vywoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
     client = pymongo.MongoClient(db_uri)
     db = client.test
 
-    calls_collection = db.calls
+    # Get successful calls without 'Conversation Score' key
+    successful_calls = db.calls.find(
+        {"status": "successfull", "Conversation Score": {"$exists": False}}
+    )
+
     user_document = None
     expert_document = None
 
-    pipeline = [
-        {"$match": {"operationType": "insert", "fullDocument.status": "successfull"}}
-    ]
-
-    with calls_collection.watch(pipeline) as stream:
-        for change in stream:
-            call = change["fullDocument"]
-            if user_document is None:
-                user_document = db.users.find_one({"_id": call["user"]})
-            if expert_document is None:
-                expert_document = db.experts.find_one({"_id": call["expert"]})
-            user = user_document["name"]
-            expert = expert_document["name"]
-            try:
-                process_call_data([call], user, expert, db, user_document)
-                print("call processed")
-            except Exception as e:
-                error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
-                socket.emit("error_notification", error_message)
-                print("call not processed")
+    for call in successful_calls:
+        if user_document is None:
+            user_document = db.users.find_one({"_id": call["user"]})
+        if expert_document is None:
+            expert_document = db.experts.find_one({"_id": call["expert"]})
+        user = user_document["name"]
+        expert = expert_document["name"]
+        try:
+            process_call_data([call], user, expert, db, user_document)
+            print("call processed")
+        except Exception as e:
+            error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
+            socket.emit("error_notification", error_message)
+            print("call not processed")
 
 
+def schedule_main():
+    # Convert IST to system's timezone
+    ist = timezone('Asia/Kolkata')
+    now = datetime.datetime.now(ist)
+    schedule_time = now.replace(hour=22, minute=00, second=0, microsecond=0)
+
+    # Schedule the main function
+    schedule.every().day.at(schedule_time.strftime('%H:%M')).do(main)
+
+# Start the scheduler
 if __name__ == "__main__":
-    main()
+    schedule_main()
+    while True:
+        schedule.run_pending()
+        time.sleep(60)
