@@ -22,7 +22,6 @@ def process_call_data(call_data, user, expert, database, usercallId):
     customer_persona = usercallId.get("Customer Persona", "None")
 
     for call in call_data:
-
         (
             transcript,
             summary,
@@ -86,7 +85,6 @@ def process_call_recording(document, user, expert, persona):
             translation.text
             + f"\n This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis)."
         )
-
         audio_file.close()
         os.remove(audio_filename)
     except Exception as e:
