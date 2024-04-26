@@ -9,25 +9,42 @@ client = MongoClient(
 )
 db = client["test"]
 collection = db["calls"]
+users = db["users"]
+
+{
+    "_id": {"$oid": "662b51f5a88f80756faa7a0b"},
+    "callId": "a441a92e-9fbb-4458-b4bf-77e72e31c794",
+    "status": "successfull",
+    "initiatedTime": {"$date": {"$numberLong": "1714115061370"}},
+    "duration": "0:04:10",
+    "transferDuration": "00:03:47",
+    "recording_url": "https://sr.knowlarity.com/vr/fetchsound/?callid%3Da441a92e-9fbb-4458-b4bf-77e72e31c794",
+    "failedReason": "",
+    "expert": {"$oid": "66046a3d42f04a057fa21034"},
+    "user": {"$oid": "66178da6a6eca419e5884569"},
+    "__v": {"$numberInt": "0"},
+}
 
 document = {
-    "callId": "4415def4-c430-46d4-8b65-9b0f3c29a094",
+    "callId": "a441a92e-9fbb-4458-b4bf-77e72e31c794",
     "status": "successfull",
-    "initiatedTime": datetime.datetime(2024, 4, 23, 15, 30, 3, 302000),
-    "duration": "0:10:29",
-    "transferDuration": "00:10:23",
-    "recording_url": "https://sr.knowlarity.com/vr/fetchsound/?callid%3D4415def4-c430-46d4-8b65-9b0f3c29a094",
+    "initiatedTime": datetime.datetime(2024, 4, 26, 7, 4, 21, 370000),
+    "duration": "0:04:10",
+    "transferDuration": "00:03:47",
+    "recording_url": "https://sr.knowlarity.com/vr/fetchsound/?callid%3Da441a92e-9fbb-4458-b4bf-77e72e31c794",
     "failedReason": "",
-    "expert": ObjectId("66046cf842f04a057fa210b4"),
-    "user": ObjectId("661794a2a6eca419e58847ff"),
+    "expert": ObjectId("66046a3d42f04a057fa21034"),
+    "user": ObjectId("66178da6a6eca419e5884569"),
     "__v": 0,
 }
-    
 
-collection.insert_one(document)
+# collection.insert_one(document)
 print("Document inserted successfully.")
 
 sleep(5)
 
-collection.delete_one({"callId": "4415def4-c430-46d4-8b65-9b0f3c29a094"})
+# collection.delete_one({"callId": "a441a92e-9fbb-4458-b4bf-77e72e31c794"})
 print("Document deleted successfully.")
+
+calls = list((collection.find({"callId": "a441a92e-9fbb-4458-b4bf-77e72e31c794"})))
+pprint.pprint(calls)

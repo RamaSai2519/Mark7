@@ -38,7 +38,7 @@ def process_call_data(call_data, user, expert, database, usercallId):
 
         transcript_url = upload_transcript(transcript, call["callId"])
 
-        update_query = {"callId": usercallId["callId"]}
+        update_query = {"_id": usercallId["_id"]}
         update_values = {"$set": {"Customer Persona": customer_persona}}
         database.users.update_one(update_query, update_values)
 
@@ -246,12 +246,12 @@ def main():
         for change in stream:
             call = change["fullDocument"]
             if user_document is None:
-                user_document = db.users.find_one({"callId": call["user"]})
+                user_document = db.users.find_one({"_id": call["user"]})
             if expert_document is None:
-                expert_document = db.experts.find_one({"callId": call["expert"]})
-            user = user_document["name"]
-            expert = expert_document["name"]
+                expert_document = db.experts.find_one({"_id": call["expert"]})
             try:
+                user = user_document["name"]
+                expert = expert_document["name"]
                 process_call_data([call], user, expert, db, user_document)
                 print("call processed")
             except Exception as e:
