@@ -1,5 +1,6 @@
 # process_call.py
 import google.generativeai as genai
+from score_updater import updater
 from openai import OpenAI
 from urllib.parse import urlparse
 import requests
@@ -9,6 +10,10 @@ from upload_transcript import upload_transcript
 import pymongo
 import socketio
 import os
+import time
+
+max_retries = 3
+retry_interval_seconds = 3600
 
 socket = socketio.Client()
 socket.connect("http://15.206.127.248/")
@@ -72,30 +77,36 @@ def download_audio(data, filename):
 
 
 def process_call_recording(document, user, expert, persona):
+    retries = 0
     audio_filename = f"{document['callId']}.mp3"
     download_audio(document, audio_filename)
     audio_file = open(audio_filename, "rb")
-    try:
-        translation = client.audio.translations.create(
-            model="whisper-1",
-            file=audio_file,
-            prompt=f"This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis).",
-        )
-        transcript = (
-            translation.text
-            + f"\n This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis)."
-        )
-        audio_file.close()
-        os.remove(audio_filename)
-    except Exception as e:
-        audio_file.close()
-        os.remove(audio_filename)
-        error_message = (
-            f"An error occurred processing the call ({document['callId']}): {str(e)}"
-        )
-        print(error_message)
-        socket.emit("error_notification", error_message)
-        return None
+    while retries < max_retries:
+        try:
+            translation = client.audio.translations.create(
+                model="whisper-1",
+                file=audio_file,
+                prompt=f"This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis).",
+            )
+            transcript = (
+                translation.text
+                + f"\n This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis)."
+            )
+            audio_file.close()
+            os.remove(audio_filename)
+        except Exception as e:
+            retries += 1
+            if retries == max_retries:
+                audio_file.close()
+                os.remove(audio_filename)
+                error_message = f"An error occurred processing the call ({document['callId']}): {str(e)}"
+                socket.emit("error_notification", error_message)
+                return None
+            else:
+                error_message = f"An error occurred processing the call ({document['callId']}): {str(e)}"
+                socket.emit("error_notification", error_message)
+                socket.emit(f"Retrying after {retry_interval_seconds / 60} minutes...")
+                time.sleep(retry_interval_seconds)
 
     # Model intitalization with context
     model = genai.GenerativeModel("gemini-pro")
@@ -252,6 +263,7 @@ def main():
                 expert = expert_document["name"]
                 process_call_data([call], user, expert, db, user_document)
                 print("call processed")
+                updater()
             except Exception as e:
                 error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
                 socket.emit("error_notification", error_message)

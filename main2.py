@@ -4,6 +4,7 @@ from openai import OpenAI
 from urllib.parse import urlparse
 import requests
 import re
+from score_updater import updater
 from sentiment import get_tonality_sentiment
 from upload_transcript import upload_transcript
 import pymongo
@@ -101,10 +102,12 @@ def process_call_recording(document, user, expert, persona):
                 error_message = (
                     f"An error occurred processing the call ({document['callId']}): {str(e)}"
                 )
-                print(error_message)
                 socket.emit("error_notification", error_message)
                 return None
             else:
+                error_message = (
+                    f"An error occurred processing the call ({document['callId']}): {str(e)}"
+                )
                 socket.emit("error_notification", error_message)
                 socket.emit(f"Retrying after {retry_interval_seconds / 60} minutes...")
                 time.sleep(retry_interval_seconds)
@@ -250,21 +253,19 @@ def main():
         successful_calls = db.calls.find({"status": "successfull"})
 
         for call in successful_calls:
-            if "Conversation Score" not in call and call.get("recording_url") not in [
-                "None",
-                "",
-            ]:
-                user_document = db.users.find_one({"_id": call["user"]})
-                expert_document = db.experts.find_one({"_id": call["expert"]})
-                user = user_document["name"]
-                expert = expert_document["name"]
-                try:
-                    process_call_data([call], user, expert, db, user_document)
-                    print("call processed")
-                except Exception as e:
-                    error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
-                    socket.emit("error_notification", error_message)
-                    print(f"call not processed \n {str(e)}")
+            if "Conversation Score" not in call and call.get("recording_url") not in ["None", ""]:
+                        try:
+                            user_document = db.users.find_one({"_id": call.get("user", "")})
+                            expert_document = db.experts.find_one({"_id": call.get("expert", "")})
+                            user = user_document["name"]
+                            expert = expert_document["name"]
+                            process_call_data([call], user, expert, db, user_document)
+                            print("call processed")
+                            updater()
+                        except Exception as e:
+                            error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
+                            socket.emit("error_notification", error_message)
+                            print(f"call not processed \n {str(e)}")
 
         print("Processed all calls. Sleeping for 1 hour...")
         time.sleep(3600)
