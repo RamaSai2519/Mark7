@@ -239,7 +239,7 @@ def main():
     expert_document = None
 
     pipeline = [
-        {"$match": {"operationType": "insert", "fullDocument.status": "successfull"}}
+        {"$match": {"operationType": "update", "fullDocument.status": "successfull"}}
     ]
 
     with calls_collection.watch(pipeline) as stream:

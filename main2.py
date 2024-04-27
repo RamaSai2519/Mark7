@@ -152,7 +152,7 @@ def process_call_recording(document, user, expert, persona):
 
             chat.send_message("Give me a total score out of 100")
             conversation_score = chat.last.text
-            conversation_score = re.findall(r"\b3[1-9]|[4-9]\d\b", conversation_score)
+            conversation_score = re.findall(r"\b(?:\d{2}|100)\b", conversation_score)
             try:
                 conversation_score = int(conversation_score[0])
                 conversation_score = conversation_score / 20
