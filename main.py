@@ -148,8 +148,9 @@ def process_call_recording(document, user, expert, persona):
             conversation_score = chat.last.text
             conversation_score = re.findall(r"\b3[1-9]|[4-9]\d\b", conversation_score)
             try:
-                conversation_score = int(conversation_score[0])
+                conversation_score = (conversation_score[0])
                 conversation_score = conversation_score / 20
+                conversation_score = int(conversation_score)
             except Exception as e:
                 conversation_score = 0
 
