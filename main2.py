@@ -227,15 +227,15 @@ def main():
 
     while True:
         successful_calls = list(db.calls.find({"status": "successfull"}))
-        print(len(successful_calls))
+        socket.emit("error_notification", "Processing calls...")
 
         for call in successful_calls:
             if "Conversation Score" not in call and call.get("recording_url") not in [
                 "None",
                 "",
             ]:
-                print(call.get("callId"))
                 try:
+                    socket.emit("error_notification", f"{call.get("CallId")} is being run")
                     user_document = db.users.find_one({"_id": call.get("user", "")})
                     expert_document = db.experts.find_one(
                         {"_id": call.get("expert", "")}

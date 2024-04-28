@@ -95,7 +95,6 @@ def updater():
             ) > 1 and expert_id in user_calls_to_experts.get(user_id, []):
                 repeat_users.append(user_names.get(user_id, "Unknown User"))
 
-
     for expert_id, repeat_ratio in repeat_ratio_per_expert.items():
         expert_name = expert_names.get(expert_id, "Unknown Expert")
         total_users = total_users_per_expert.get(expert_id, [])
@@ -119,6 +118,7 @@ def updater():
     for call in calls_collection.find():
         expert_id = str(call.get("expert"))
         calls_per_expert[expert_id] = calls_per_expert.get(expert_id, 0) + 1
+    print(calls_per_expert)
 
     total_calls = sum(calls_per_expert.values())
 
@@ -131,13 +131,18 @@ def updater():
                 {"_id": ObjectId(expert_id)}, {"$set": {"repeat_score": repeat_score}}
             )
         except Exception as e:
-            print(f"Error updating expert: {e}")
+            print(f"Error updating expert's repeat score: {e}")
         score = scores_per_expert.get(expert_id, 0)
         score = int(score)
         calls = calls_per_expert.get(expert_id, 0)
         normalized_calls = (calls / total_calls) * 100 if total_calls != 0 else 0
         normalized_calls = int(normalized_calls)
-
+        try:
+            experts_collection.update_one(
+                {"_id": ObjectId(expert_id)}, {"$set": {"calls_share": normalized_calls}}
+            )
+        except Exception as e:
+            print(f"Error updating expert: {e}")
         final_score = (score + repeat_score + normalized_calls) / 3
         final_scores[expert_id] = final_score
 
