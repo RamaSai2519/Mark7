@@ -17,9 +17,7 @@ def updater():
         expert_id = str(call.get("expert"))
         if "Conversation Score" not in call:
             continue
-        score = int(call.get("Conversation Score", 0))
-        if score > 5:
-            score = score / 20
+        score = call.get("Conversation Score", 0)
         conversation_scores.setdefault(expert_id, []).append(score)
 
     average_conversation_scores = {}
