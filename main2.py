@@ -226,7 +226,8 @@ def main():
     db = client.test
 
     while True:
-        successful_calls = db.calls.find({"status": "successfull"})
+        successful_calls = list(db.calls.find({"status": "successfull"}))
+        print(len(successful_calls))
 
         for call in successful_calls:
             if "Conversation Score" not in call and call.get("recording_url") not in [
