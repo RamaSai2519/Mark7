@@ -68,7 +68,6 @@ def download_audio(data, filename):
         return None
     url = urlparse(url)
     url = url.scheme + "://" + url.netloc + url.path
-    print(call_uuid)
     params = {"callid": call_uuid}
     response = requests.get(url, params=params)
     with open(filename, "wb") as f:
@@ -94,13 +93,11 @@ def process_call_recording(document, user, expert, persona):
             f"An error occurred processing the call ({document['callId']}): {str(e)}"
         )
         socket.emit("error_notification", error_message)
-        print(error_message)
         socket.emit(f"Retrying after {retry_interval_seconds / 60} minutes...")
         time.sleep(retry_interval_seconds)
 
     audio_file.close()
     os.remove(audio_filename)
-    # Model intitalization with context
     model = genai.GenerativeModel("gemini-pro")
     chat = model.start_chat(history=[])
     chat.send_message(
@@ -118,15 +115,12 @@ def process_call_recording(document, user, expert, persona):
         summary = chat.last.text.replace("*", " ")
 
         if "All good" in summary:
-            # Summary
             chat.send_message("Summarize the transcript")
             summary = chat.last.text.replace("*", " ")
 
-            # Feedback for the Saarthi
             chat.send_message("Give me feedback for the saarthi")
             saarthi_feedback = chat.last.text.replace("*", " ")
 
-            # Conversation Score
             with open("guidelines.txt", "r", encoding="utf-8") as file:
                 guidelines = file.read()
 
@@ -171,7 +165,6 @@ def process_call_recording(document, user, expert, persona):
             else:
                 pass
 
-            # Customer Demographics
             chat.send_message(
                 """
                               Context: Generate a cutomer persona with the information provided above. The persona should encompass demographics, psychographics, and personality traits based on the conversation.
@@ -200,7 +193,6 @@ def process_call_recording(document, user, expert, persona):
             )
             customer_persona = chat.last.text.replace("*", " ")
 
-            # User callback probabiltity
             chat.send_message(
                 """
                               Calculate the probability of the user calling back.
@@ -224,8 +216,6 @@ def process_call_recording(document, user, expert, persona):
             return None, None, None, None, None, None, None, None
 
     except Exception as e:
-        print(3)
-        print(e)
         socket.emit("An error occurred while processing the call:", str(e))
         return e
 
@@ -236,7 +226,6 @@ def main():
     db = client.test
 
     while True:
-        # Get successful calls
         successful_calls = db.calls.find({"status": "successfull"})
 
         for call in successful_calls:
@@ -252,14 +241,11 @@ def main():
                     user = user_document["name"]
                     expert = expert_document["name"]
                     process_call_data([call], user, expert, db, user_document)
-                    print("call processed")
                     updater()
                 except Exception as e:
                     error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
                     socket.emit("error_notification", error_message)
-                    print(f"call not processed \n {str(e)}")
 
-        print("Processed all calls. Sleeping for 1 hour...")
         time.sleep(3600)
 
 

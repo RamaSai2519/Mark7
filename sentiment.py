@@ -1,7 +1,6 @@
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
-# Load the VADER sentiment analyzer
 sid = SentimentIntensityAnalyzer()
 
 def get_sentiment_label(score):
@@ -17,22 +16,17 @@ def get_sentiment_label(score):
         return "Very Negative"
 
 def get_tonality_sentiment(transcript):
-    # Tokenize the transcript into sentences
     sentences = nltk.sent_tokenize(transcript)
     
-    # Initialize tonality score
     tonality_score = 0
     
-    # Calculate sentiment score for each sentence and aggregate
     for sentence in sentences:
         sentiment = sid.polarity_scores(sentence)
         tonality_score += sentiment['compound']
     
-    # Calculate average tonality score
     num_sentences = len(sentences)
     tonality_score /= num_sentences
     
-    # Get sentiment label
     sentiment_label = get_sentiment_label(tonality_score)
     
     return sentiment_label

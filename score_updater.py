@@ -12,18 +12,16 @@ experts_collection = db["experts"]
 
 
 def updater():
-    # Step 0: Calculate Conversation Scores
     conversation_scores = {}
     for call in calls_collection.find():
         expert_id = str(call.get("expert"))
         if "Conversation Score" not in call:
             continue
-        score = call.get("Conversation Score", 0)
+        score = int(call.get("Conversation Score", 0))
         if score > 5:
             score = score / 20
         conversation_scores.setdefault(expert_id, []).append(score)
 
-    # Calculate average conversation score per expert
     average_conversation_scores = {}
     for expert_id, scores in conversation_scores.items():
         average_score = sum(scores) / len(scores) if scores else 0
@@ -39,17 +37,14 @@ def updater():
 
     calls = calls_collection.find()
 
-    # Get expert names
     expert_names = {}
     for expert in experts_collection.find():
         expert_names[str(expert.get("_id"))] = expert.get("name")
 
-    # Get user names
     user_names = {}
     for user in users_collection.find():
         user_names[str(user.get("_id"))] = user.get("name")
 
-    # List of excluded users
     excluded_users = [
         "6604618e42f04a057fa20cbb",
         "6604a57ad0a5b997c4121881",
@@ -71,13 +66,11 @@ def updater():
         expert_id = str(call.get("expert"))
         user_id = str(call.get("user"))
 
-        # Skip calls by excluded users
         if user_id in excluded_users:
             continue
 
         total_users_per_expert.setdefault(expert_id, set()).add(user_id)
 
-        # Keep track of user's calls to different experts
         user_calls_to_experts.setdefault(user_id, set()).add(expert_id)
 
     repeat_ratio_per_expert = {}
@@ -85,7 +78,6 @@ def updater():
         total_users = len(total_users_per_expert[expert_id])
         repeat_users = 0
         for user_id in total_users_per_expert[expert_id]:
-            # Check if the user has called this expert more than once
             if len(
                 user_calls_to_experts.get(user_id, [])
             ) > 1 and expert_id in user_calls_to_experts.get(user_id, []):
@@ -118,23 +110,19 @@ def updater():
         result_sentence = f"{expert_id},{expert_name}: {repeat_ratio:.0f}%"
         results_per_expert.append(result_sentence)
 
-    # Step 1: Get the "score" of each expert and multiply by 20
     scores_per_expert = {}
     for expert in experts_collection.find():
         expert_id = str(expert.get("_id"))
         score = expert.get("score", 0) * 20
         scores_per_expert[expert_id] = score
 
-    # Step 3: Get the number of calls per each expert
     calls_per_expert = {}
     for call in calls_collection.find():
         expert_id = str(call.get("expert"))
         calls_per_expert[expert_id] = calls_per_expert.get(expert_id, 0) + 1
 
-    # Total number of calls
     total_calls = sum(calls_per_expert.values())
 
-    # Step 4: Calculate final scores
     final_scores = {}
     for expert_id in total_users_per_expert.keys():
         repeat_score = repeat_ratio_per_expert.get(expert_id, 0)
@@ -151,11 +139,9 @@ def updater():
         normalized_calls = (calls / total_calls) * 100 if total_calls != 0 else 0
         normalized_calls = int(normalized_calls)
 
-        # Calculate final score (sum of normalized values)
         final_score = (score + repeat_score + normalized_calls) / 3
         final_scores[expert_id] = final_score
 
-    # Update experts with final scores
     for expert_id, score in final_scores.items():
         score = int(score)
         calls = calls_per_expert.get(expert_id, 0)
