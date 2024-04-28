@@ -118,7 +118,6 @@ def updater():
     for call in calls_collection.find():
         expert_id = str(call.get("expert"))
         calls_per_expert[expert_id] = calls_per_expert.get(expert_id, 0) + 1
-    print(calls_per_expert)
 
     total_calls = sum(calls_per_expert.values())
 
