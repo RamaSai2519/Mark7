@@ -23,7 +23,6 @@ def updater():
 
     average_conversation_scores = {}
     for expert_id, scores in conversation_scores.items():
-        print(sum(scores), len(scores))
         average_score = sum(scores) / len(scores) if scores else 0
         average_conversation_scores[expert_id] = average_score
         average_score = round(average_score, 1)
