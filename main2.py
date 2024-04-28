@@ -234,6 +234,7 @@ def main():
                 "None",
                 "",
             ]:
+                print(call.get("callId"))
                 try:
                     user_document = db.users.find_one({"_id": call.get("user", "")})
                     expert_document = db.experts.find_one(
