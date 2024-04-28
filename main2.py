@@ -234,8 +234,8 @@ def main():
                 "None",
                 "",
             ]:
+                socket.emit("error_notification", f"{call.get("CallId")} is being run")
                 try:
-                    socket.emit("error_notification", f"{call.get("CallId")} is being run")
                     user_document = db.users.find_one({"_id": call.get("user", "")})
                     expert_document = db.experts.find_one(
                         {"_id": call.get("expert", "")}
