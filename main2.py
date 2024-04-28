@@ -227,7 +227,6 @@ def main():
 
     while True:
         successful_calls = list(db.calls.find({"status": "successfull"}))
-        socket.emit("error_notification", "Processing calls...")
 
         for call in successful_calls:
             if "Conversation Score" not in call and call.get("recording_url") not in [
