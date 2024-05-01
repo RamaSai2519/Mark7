@@ -102,9 +102,9 @@ def process_call_recording(document, user, expert, persona):
     chat = model.start_chat(history=[])
     chat.send_message(
         f"I'll give you a call transcript between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis). Study the transcript and answer the questions I ask accordingly"
-    )
+    ).resolve()
     try:
-        chat.send_message(transcript + "\n This is the transcript")
+        chat.send_message(transcript + "\n This is the transcript").resolve()
 
         chat.send_message(
             """
@@ -115,10 +115,10 @@ def process_call_recording(document, user, expert, persona):
         summary = chat.last.text.replace("*", " ")
 
         if "All good" in summary:
-            chat.send_message("Summarize the transcript")
+            chat.send_message("Summarize the transcript").resolve()
             summary = chat.last.text.replace("*", " ")
 
-            chat.send_message("Give me feedback for the saarthi")
+            chat.send_message("Give me feedback for the saarthi").resolve()
             saarthi_feedback = chat.last.text.replace("*", " ")
 
             with open("guidelines.txt", "r", encoding="utf-8") as file:
@@ -141,14 +141,14 @@ def process_call_recording(document, user, expert, persona):
 
                               Find the section relating to the parameters in these guidelines before you give a score. Higher score if the guidelines are followed.
                               """
-            )
+            ).resolve()
             conversation_score_details = chat.last.text.replace("*", " ")
 
-            chat.send_message("Give me a total score out of 100")
+            chat.send_message("Give me a total score out of 100").resolve()
             conversation_score = chat.last.text
             conversation_score = re.findall(r"\b3[1-9]|[4-9]\d\b", conversation_score)
             try:
-                conversation_score = (conversation_score[0])
+                conversation_score = conversation_score[0]
                 conversation_score = conversation_score / 20
                 conversation_score = int(conversation_score)
             except Exception as e:
@@ -162,7 +162,7 @@ def process_call_recording(document, user, expert, persona):
 
                                   Remember this and answer the next question accordingly.
                                   """
-                )
+                ).resolve()
             else:
                 pass
 
@@ -191,17 +191,17 @@ def process_call_recording(document, user, expert, persona):
                               c. Customer Personality:
                               Choose one(Sanguine/Choleric/Melancholic/Phlegmatic)
                               """
-            )
+            ).resolve()
             customer_persona = chat.last.text.replace("*", " ")
 
             chat.send_message(
                 """
                               Calculate the probability of the user calling back.
                               """
-            )
+            ).resolve()
             user_callback = chat.last.text.replace("*", " ")
 
-            chat.send_message("Identify the topics they are talking about")
+            chat.send_message("Identify the topics they are talking about").resolve()
             topics = chat.last.text.replace("*", " ")
             return (
                 transcript,
@@ -249,6 +249,7 @@ def main():
             except Exception as e:
                 error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
                 socket.emit("error_notification", error_message)
+
 
 if __name__ == "__main__":
     main()
