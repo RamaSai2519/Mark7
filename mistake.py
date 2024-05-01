@@ -9,28 +9,27 @@ client = MongoClient(
 )
 db = client["test"]
 collection = db["calls"]
-users = db["users"]
 
 document = {
-    "callId": "3975dd83-50dc-4be3-81be-1c8b9be31ee1",
+    "callId": "cd19bfee-38b8-4535-94b6-d484fa9fa45f",
     "status": "successfull",
-    "initiatedTime": datetime.datetime(2024, 4, 26, 4, 0, 26, 474000),
-    "duration": "0:23:03",
-    "transferDuration": "00:22:55",
-    "recording_url": "https://sr.knowlarity.com/vr/fetchsound/?callid%3D3975dd83-50dc-4be3-81be-1c8b9be31ee1",
-    "failedReason": "",
-    "expert": ObjectId("6604665042f04a057fa20ddc"),
-    "user": ObjectId("661526bc6159273a018e7b89"),
+    "initiatedTime": datetime.datetime(2024, 4, 30, 11, 5, 30, 772000),
+    "duration": "0:00:48",
+    "transferDuration": "00:00:00",
+    "recording_url": "None",
+    "failedReason": "call missed",
+    "expert": ObjectId("66046d7b42f04a057fa210c4"),
+    "user": ObjectId("6630d04399906e1d9d9c0560"),
     "__v": 0,
 }
 
-# collection.insert_one(document)
-# print("Document inserted successfully.")
+collection.insert_one(document)
+print("Document inserted successfully.")
 
-# sleep(5)
+sleep(1)
 
-# collection.delete_one({"callId": "3975dd83-50dc-4be3-81be-1c8b9be31ee1"})
-# print("Document deleted successfully.")
+collection.delete_one({"callId": "cd19bfee-38b8-4535-94b6-d484fa9fa45f"})
+print("Document deleted successfully.")
 
-calls = list((collection.find({"callId": "3975dd83-50dc-4be3-81be-1c8b9be31ee1"})))
+calls = list((collection.find({"callId": "cd19bfee-38b8-4535-94b6-d484fa9fa45f"})))
 pprint.pprint(calls)

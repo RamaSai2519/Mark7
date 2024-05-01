@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 from bson import ObjectId
+from scores_extractor import calculate_average_scores
 
 client = MongoClient(
     "mongodb+srv://sukoon_user:Tcks8x7wblpLL9OA@cluster0.o7vywoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -12,6 +13,7 @@ experts_collection = db["experts"]
 
 
 def updater():
+    calculate_average_scores()
     conversation_scores = {}
     for call in calls_collection.find():
         expert_id = str(call.get("expert"))
@@ -156,6 +158,3 @@ def updater():
             )
         except Exception as e:
             print(f"Error updating expert: {e}")
-
-
-updater()
