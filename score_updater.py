@@ -140,7 +140,8 @@ def updater():
         normalized_calls = int(normalized_calls)
         try:
             experts_collection.update_one(
-                {"_id": ObjectId(expert_id)}, {"$set": {"calls_share": normalized_calls}}
+                {"_id": ObjectId(expert_id)},
+                {"$set": {"calls_share": normalized_calls}},
             )
         except Exception as e:
             print(f"Error updating expert: {e}")
