@@ -137,7 +137,7 @@ def updater():
         score = int(score)
         calls = calls_per_expert.get(expert_id, 0)
         normalized_calls = (calls / total_calls) * 100 if total_calls != 0 else 0
-        normalized_calls = int(normalized_calls)
+        normalized_calls = round(normalized_calls, 2)
         try:
             experts_collection.update_one(
                 {"_id": ObjectId(expert_id)},
@@ -159,3 +159,6 @@ def updater():
             )
         except Exception as e:
             print(f"Error updating expert: {e}")
+
+
+updater()

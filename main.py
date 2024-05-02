@@ -133,7 +133,7 @@ def process_call_recording(document, user, expert, persona):
                               User Sentiment(_/20) - Evaluate the sentiment of the user.
                               Flow Of Conversation(_/10) - Evaluate if the guidelines given below are followed.
                               Time Spent on Call(_/15) - Higher the time, Higher the score.
-                              Probability of Calling Back(_/20) - The User should explicitly state that they would call back for a higher score. Also mention the instance if the user explicilty states that they would cal back.
+                              Probability of the User Calling Back(_/20) - The User should explicitly state that they would call back for a higher score. Also mention the instance if the user explicilty states that they would cal back.
                               Closing Greeting(_/5) - Evaluate if the guidelines given below are followed.
 
                               Guidelines:
