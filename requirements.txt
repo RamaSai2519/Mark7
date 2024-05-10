@@ -4,3 +4,5 @@ pymongo
 python-socketio
 requests
 schedule
+boto3
+nltk
