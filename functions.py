@@ -14,6 +14,7 @@ client = MongoClient(
 )
 db = client["test"]
 fcm_tokens_collection = db["fcm_tokens"]
+errorlog_collection = db["errorlogs"]
 
 retry_interval_seconds = 43200
 
@@ -221,6 +222,8 @@ def notify(message):
             "Content-Type": "application/json",
         }
         response = requests.post(fcm_url, json=payload, headers=headers)
+        current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+        errorlog_collection.insert_one({"message": message, "time": current_time})
     if response.status_code == 200:
         pass
     else:
