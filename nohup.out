@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "/home/ec2-user/Mark7/main.py", line 3, in <module>
-    from score_updater import updater
-  File "/home/ec2-user/Mark7/score_updater.py", line 158, in <module>
-    updater()
-  File "/home/ec2-user/Mark7/score_updater.py", line 20, in updater
-    score = int(call.get("Conversation Score", 0))
-ValueError: invalid literal for int() with base 10: '4.75'
