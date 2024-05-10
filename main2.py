@@ -233,6 +233,7 @@ def main():
                 "None",
                 "",
             ]:
+                f"Processing call: ({call.get('callId')})"
                 error_message = f"Processing call: ({call.get('callId')})"
                 socket.emit("error_notification", error_message)
                 try:
