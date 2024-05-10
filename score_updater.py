@@ -132,6 +132,7 @@ def updater():
             )
         except Exception as e:
             print(f"Error updating expert's repeat score: {e}")
+            print("Checking Git Pull")
         score = scores_per_expert.get(expert_id, 0)
         score = int(score)
         calls = calls_per_expert.get(expert_id, 0)
