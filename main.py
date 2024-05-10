@@ -7,15 +7,12 @@ import requests
 import re
 from sentiment import get_tonality_sentiment
 from upload_transcript import upload_transcript
+from push_notify import notify
 import pymongo
-import socketio
 import os
 import time
 
 retry_interval_seconds = 43200
-
-socket = socketio.Client()
-socket.connect("http://15.206.127.248/")
 
 genai.configure(api_key="AIzaSyC7GliarMdf_jCp6SbKpfzjGwW1IdgFKws")
 
@@ -92,8 +89,8 @@ def process_call_recording(document, user, expert, persona):
         error_message = (
             f"An error occurred processing the call ({document['callId']}): {str(e)}"
         )
-        socket.emit("error_notification", error_message)
-        socket.emit(f"Retrying after {retry_interval_seconds / 60} minutes...")
+        notify("error_notification", error_message)
+        notify(f"Retrying after {retry_interval_seconds / 60} minutes...")
         time.sleep(retry_interval_seconds)
 
     audio_file.close()
@@ -217,7 +214,7 @@ def process_call_recording(document, user, expert, persona):
             return None, None, None, None, None, None, None, None
 
     except Exception as e:
-        socket.emit("An error occurred while processing the call:", str(e))
+        notify("An error occurred while processing the call:", str(e))
         return e
 
 
@@ -248,7 +245,7 @@ def main():
                 updater()
             except Exception as e:
                 error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
-                socket.emit("error_notification", error_message)
+                notify("error_notification", error_message)
 
 
 if __name__ == "__main__":
