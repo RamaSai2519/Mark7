@@ -31,7 +31,6 @@ def updater():
         experts_collection.update_one(
             {"_id": ObjectId(expert_id)}, {"$set": {"score": average_score}}
         )
-        # print(f"{expert_id}: {average_score}")
 
     total_users_per_expert = {}
     user_calls_to_experts = {}
