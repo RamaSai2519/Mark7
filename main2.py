@@ -3,6 +3,7 @@ import pymongo
 from functions import *
 import time
 
+
 def main():
     db_uri = "mongodb+srv://sukoon_user:Tcks8x7wblpLL9OA@cluster0.o7vywoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
     client = pymongo.MongoClient(db_uri)
@@ -12,13 +13,20 @@ def main():
         successful_calls = list(db.calls.find({"status": "successfull"}))
 
         for call in successful_calls:
-            if call["duration"] >= "00:05:00":
-                if "Conversation Score" not in call and call.get("recording_url") not in [
+            duration = call.get("duration", "00:00:00")
+            seconds = sum(
+                int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
+            )
+            if seconds > 300:
+                if "Conversation Score" not in call and call.get(
+                    "recording_url"
+                ) not in [
                     "None",
                     "",
                 ]:
                     f"Processing call: ({call.get('callId')})"
                     error_message = f"Processing call: ({call.get('callId')})"
+                    print(error_message)
                     notify(error_message)
                     try:
                         user_document = db.users.find_one({"_id": call.get("user", "")})

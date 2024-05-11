@@ -2,6 +2,7 @@ from score_updater import updater
 from functions import *
 import pymongo
 
+
 def main():
     db_uri = "mongodb+srv://sukoon_user:Tcks8x7wblpLL9OA@cluster0.o7vywoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
     client = pymongo.MongoClient(db_uri)
@@ -21,8 +22,11 @@ def main():
                 user_document = db.users.find_one({"_id": call["user"]})
             if expert_document is None:
                 expert_document = db.experts.find_one({"_id": call["expert"]})
-            
-            if call["duration"] >= "00:05:00":
+            duration = call.get("duration", "00:00:00")
+            seconds = sum(
+                int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
+            )
+            if seconds > 300:
                 try:
                     user = user_document["name"]
                     expert = expert_document["name"]
