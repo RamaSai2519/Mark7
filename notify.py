@@ -1,12 +1,14 @@
 from config import fcm_tokens_collection, errorlog_collection
 import requests
-import time
+from datetime import datetime
+import pytz
 
 
 def notify(message):
     fcm_url = "https://fcm.googleapis.com/fcm/send"
     server_key = "AAAAM5jkbNg:APA91bG80zQ8CzD1AeQmV45YT4yWuwSgJ5VwvyLrNynAJBk4AcyCb6vbCSGlIQeQFPAndS0TbXrgEL8HFYQq4DMXmSoJ4ek7nFcCwOEDq3Oi5Or_SibSpywYFrnolM4LSxpRkVeiYGDv"
-    current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+    datetime_now = datetime.now(pytz.timezone("Asia/Kolkata"))
+    current_time = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
     errorlog_collection.insert_one({"message": message, "time": current_time})
     tokens = list(fcm_tokens_collection.find())
     for token in tokens:
