@@ -1,5 +1,5 @@
 from download_audio import download_audio
-from config import *
+from config import client, model, retry_interval_seconds
 from notify import notify
 import time
 import os

@@ -1,13 +1,6 @@
-from pymongo import MongoClient
+from config import calls_collection, experts_collection
 from bson import ObjectId
 import re
-
-client = MongoClient(
-    "mongodb+srv://sukoon_user:Tcks8x7wblpLL9OA@cluster0.o7vywoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-)
-db = client["test"]
-calls_collection = db["calls"]
-experts_collection = db["experts"]
 
 
 def calls_scores_extractor():

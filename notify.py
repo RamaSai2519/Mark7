@@ -1,6 +1,7 @@
-from config import *
+from config import fcm_tokens_collection, errorlog_collection
 import requests
 import time
+
 
 def notify(message):
     fcm_url = "https://fcm.googleapis.com/fcm/send"

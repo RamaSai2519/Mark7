@@ -1,18 +1,12 @@
-from pymongo import MongoClient
-from bson import ObjectId
 from scores_extractor import calculate_average_scores
-
-client = MongoClient(
-    "mongodb+srv://sukoon_user:Tcks8x7wblpLL9OA@cluster0.o7vywoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-)
-db = client["test"]
-calls_collection = db["calls"]
-users_collection = db["users"]
-experts_collection = db["experts"]
+from bson.objectid import ObjectId
+from notify import notify
+from config import calls_collection, experts_collection, users_collection
 
 
 def updater():
     calculate_average_scores()
+
     conversation_scores = {}
     for call in calls_collection.find():
         expert_id = str(call.get("expert"))
@@ -112,8 +106,7 @@ def updater():
                 {"_id": ObjectId(expert_id)}, {"$set": {"repeat_score": repeat_score}}
             )
         except Exception as e:
-            print(f"Error updating expert's repeat score: {e}")
-            print("Checking Git Pull")
+            notify(f"Error updating expert's repeat score: {e}")
         score = scores_per_expert.get(expert_id, 0)
         score = int(score)
         calls = calls_per_expert.get(expert_id, 0)
@@ -125,7 +118,7 @@ def updater():
                 {"$set": {"calls_share": normalized_calls}},
             )
         except Exception as e:
-            print(f"Error updating expert: {e}")
+            notify(f"Error updating calls share of expert: {e}")
         final_score = (score + repeat_score + normalized_calls) / 3
         final_scores[expert_id] = final_score
 
@@ -139,4 +132,4 @@ def updater():
                 {"_id": ObjectId(expert_id)}, {"$set": {"total_score": score}}
             )
         except Exception as e:
-            print(f"Error updating expert: {e}")
+            notify(f"Error updating final score of expert: {e}")

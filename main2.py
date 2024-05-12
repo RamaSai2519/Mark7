@@ -1,8 +1,8 @@
 from process_call_data import process_call_data
 from score_updater import updater
 from notify import notify
-from pprint import pprint
-from config import *
+from config import db
+from Score_corrector import corrector
 import time
 
 
@@ -19,10 +19,6 @@ while True:
                 "None",
                 "",
             ]:
-                f"Processing call: ({call.get('callId')})"
-                error_message = f"Processing call: ({call.get('callId')})"
-                print(error_message)
-                notify(error_message)
                 try:
                     user_document = db.users.find_one({"_id": call.get("user", "")})
                     expert_document = db.experts.find_one(
@@ -30,9 +26,11 @@ while True:
                     )
                     user = user_document["name"]
                     expert = expert_document["name"]
-                    pprint(call)
-                    print(user, expert)
+                    notify(
+                        f"Processing call {str(call.get('callId'))} between {user} and {expert}"
+                    )
                     process_call_data([call], user, expert, db, user_document)
+                    corrector(call["callId"])
                     updater()
                 except Exception as e:
                     error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"

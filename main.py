@@ -1,8 +1,8 @@
 from process_call_data import process_call_data
 from score_updater import updater
 from notify import notify
-from pprint import pprint
-from config import *
+from Score_corrector import corrector
+from config import calls_collection, db
 
 pipeline = [
     {
@@ -14,7 +14,6 @@ pipeline = [
 ]
 
 with calls_collection.watch(pipeline) as stream:
-    print("Listening for changes...")
     for change in stream:
         call = change["fullDocument"]
         if user_document is None:
@@ -29,11 +28,12 @@ with calls_collection.watch(pipeline) as stream:
             try:
                 user = user_document["name"]
                 expert = expert_document["name"]
-                pprint(call)
-                print(user, expert)
+                notify(
+                    f"Processing call {str(call.get('callId'))} between {user} and {expert}"
+                )
                 process_call_data([call], user, expert, db, user_document)
+                corrector(call["callId"])
                 updater()
             except Exception as e:
-                print(e)
                 error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
                 notify(error_message)
