@@ -6,7 +6,6 @@ client = MongoClient(
     "mongodb+srv://sukoon_user:Tcks8x7wblpLL9OA@cluster0.o7vywoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 )
 db = client["test"]
-
 calls_collection = db["calls"]
 users_collection = db["users"]
 experts_collection = db["experts"]
@@ -45,29 +44,11 @@ def updater():
     for user in users_collection.find():
         user_names[str(user.get("_id"))] = user.get("name")
 
-    excluded_users = [
-        "6604618e42f04a057fa20cbb",
-        "6604a57ad0a5b997c4121881",
-        "660acafe9f28ee9c2c00762c",
-        "660e5f213a2d66e7354e714c",
-        "6610ea948114085c8fe81961",
-        "6612aa049100784ebd2f7f05",
-        "6614b6a79100784ebd2f99f3",
-        "661a21ce962c25df8c06332e",
-        "661cf516962c25df8c0654a1",
-        "661d3f3017982c74166f9c1d",
-        "661f86e66ad8929bec29f568",
-        "66211c0047d3fd0682c40afc",
-    ]
-
     results_per_expert = []
 
     for call in calls:
         expert_id = str(call.get("expert"))
         user_id = str(call.get("user"))
-
-        if user_id in excluded_users:
-            continue
 
         total_users_per_expert.setdefault(expert_id, set()).add(user_id)
 
@@ -159,6 +140,3 @@ def updater():
             )
         except Exception as e:
             print(f"Error updating expert: {e}")
-
-
-updater()

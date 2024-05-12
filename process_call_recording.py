@@ -1,66 +1,9 @@
-import google.generativeai as genai
-from urllib.parse import urlparse
-from sentiment import get_tonality_sentiment
-from upload_transcript import upload_transcript
-from pymongo import MongoClient
-from openai import OpenAI
-import requests
+from download_audio import download_audio
+from config import *
+from notify import notify
 import time
 import os
 import re
-
-client = MongoClient(
-    "mongodb+srv://sukoon_user:Tcks8x7wblpLL9OA@cluster0.o7vywoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-)
-db = client["test"]
-fcm_tokens_collection = db["fcm_tokens"]
-errorlog_collection = db["errorlogs"]
-
-retry_interval_seconds = 43200
-
-genai.configure(api_key="AIzaSyC7GliarMdf_jCp6SbKpfzjGwW1IdgFKws")
-
-client = OpenAI(api_key="sk-proj-aKKDe91pGa2k6HMxYksiT3BlbkFJfijdRZELYUustkm8biLd")
-
-
-def process_call_data(call_data, user, expert, database, usercallId):
-    customer_persona = usercallId.get("Customer Persona", "None")
-
-    for call in call_data:
-        (
-            transcript,
-            summary,
-            conversation_score,
-            conversation_score_details,
-            saarthi_feedback,
-            customer_persona,
-            user_callback,
-            topics,
-        ) = process_call_recording(call, user, expert, customer_persona)
-
-        sentiment = get_tonality_sentiment(transcript)
-
-        transcript_url = upload_transcript(transcript, call["callId"])
-
-        update_query = {"_id": usercallId["_id"]}
-        update_values = {"$set": {"Customer Persona": customer_persona}}
-        database.users.update_one(update_query, update_values)
-
-        update_query = {"callId": call["callId"]}
-        update_values = {
-            "$set": {
-                "Conversation Score": conversation_score,
-                "Score Breakup": conversation_score_details,
-                "Sentiment": sentiment,
-                "Saarthi Feedback": saarthi_feedback,
-                "User Callback": user_callback,
-                "Topics": topics,
-                "Summary": summary,
-                "transcript_url": transcript_url,
-            }
-        }
-        database.calls.update_one(update_query, update_values)
-
 
 def process_call_recording(document, user, expert, persona):
     audio_filename = f"{document['callId']}.mp3"
@@ -86,7 +29,7 @@ def process_call_recording(document, user, expert, persona):
 
     audio_file.close()
     os.remove(audio_filename)
-    model = genai.GenerativeModel("gemini-pro")
+    
     chat = model.start_chat(history=[])
     chat.send_message(
         f"I'll give you a call transcript between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis). Study the transcript and answer the questions I ask accordingly"
@@ -206,38 +149,3 @@ def process_call_recording(document, user, expert, persona):
     except Exception as e:
         notify("An error occurred while processing the call:", str(e))
         return e
-
-
-def notify(message):
-    fcm_url = "https://fcm.googleapis.com/fcm/send"
-    server_key = "AAAAM5jkbNg:APA91bG80zQ8CzD1AeQmV45YT4yWuwSgJ5VwvyLrNynAJBk4AcyCb6vbCSGlIQeQFPAndS0TbXrgEL8HFYQq4DMXmSoJ4ek7nFcCwOEDq3Oi5Or_SibSpywYFrnolM4LSxpRkVeiYGDv"
-    tokens = list(fcm_tokens_collection.find())
-    for token in tokens:
-        payload = {
-            "to": token["token"],
-            "notification": {"title": "Notification", "body": message},
-        }
-        headers = {
-            "Authorization": "key=" + server_key,
-            "Content-Type": "application/json",
-        }
-        response = requests.post(fcm_url, json=payload, headers=headers)
-        current_time = time.strftime("%Y-%m-%d %H:%M:%S")
-        errorlog_collection.insert_one({"message": message, "time": current_time})
-    if response.status_code == 200:
-        pass
-    else:
-        print("Failed to send notification:", response.text)
-
-
-def download_audio(data, filename):
-    call_uuid = data["callId"]
-    url = data["recording_url"]
-    if not url.startswith("http"):
-        return None
-    url = urlparse(url)
-    url = url.scheme + "://" + url.netloc + url.path
-    params = {"callid": call_uuid}
-    response = requests.get(url, params=params)
-    with open(filename, "wb") as f:
-        f.write(response.content)
