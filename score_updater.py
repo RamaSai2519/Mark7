@@ -13,8 +13,9 @@ def updater():
         if "Conversation Score" not in call:
             continue
         score = call.get("Conversation Score", 0)
-        score = float(score)
-        conversation_scores.setdefault(expert_id, []).append(score)
+        if score > 0:
+            score = float(score)
+            conversation_scores.setdefault(expert_id, []).append(score)
 
     average_conversation_scores = {}
     for expert_id, scores in conversation_scores.items():
@@ -133,3 +134,6 @@ def updater():
             )
         except Exception as e:
             notify(f"Error updating final score of expert: {e}")
+
+
+updater()
