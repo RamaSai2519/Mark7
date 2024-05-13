@@ -5,6 +5,7 @@ import time
 import os
 import re
 
+
 def process_call_recording(document, user, expert, persona):
     audio_filename = f"{document['callId']}.mp3"
     download_audio(document, audio_filename)
@@ -20,16 +21,14 @@ def process_call_recording(document, user, expert, persona):
             + f"\n This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis)."
         )
     except Exception as e:
-        error_message = (
-            f"An error occurred processing the call ({document['callId']}): {str(e)}"
-        )
+        error_message = f"An error occurred processing the call ({document['callId']}): {str(e)} while transcripting the audio"
         notify(error_message)
         notify(f"Retrying after {retry_interval_seconds / 60} minutes...")
         time.sleep(retry_interval_seconds)
 
     audio_file.close()
     os.remove(audio_filename)
-    
+
     chat = model.start_chat(history=[])
     chat.send_message(
         f"I'll give you a call transcript between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis). Study the transcript and answer the questions I ask accordingly"
@@ -147,5 +146,5 @@ def process_call_recording(document, user, expert, persona):
             return None, None, None, None, None, None, None, None
 
     except Exception as e:
-        notify("An error occurred while processing the call:", str(e))
+        notify("An error occurred on process_call_recording:", str(e))
         return e

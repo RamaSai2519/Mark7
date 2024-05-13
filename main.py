@@ -35,5 +35,5 @@ with calls_collection.watch(pipeline) as stream:
                 corrector(call["callId"])
                 updater()
             except Exception as e:
-                error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
+                error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)} on main loop"
                 notify(error_message)

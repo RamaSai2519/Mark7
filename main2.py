@@ -33,6 +33,6 @@ while True:
                     corrector(call["callId"])
                     updater()
                 except Exception as e:
-                    error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)}"
+                    error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)} on backup loop"
                     notify(error_message)
                     time.sleep(3600)
