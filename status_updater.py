@@ -18,7 +18,7 @@ def job():
 
 while True:
     current_time = datetime.now(pytz.timezone("Asia/Kolkata"))
-    target_time = current_time.replace(hour=21, minute=0, second=0, microsecond=0)
+    target_time = current_time.replace(hour=22, minute=0, second=0, microsecond=0)
     if current_time > target_time:
         target_time = target_time + timedelta(days=1)
     sleep_duration = (target_time - current_time).total_seconds()
