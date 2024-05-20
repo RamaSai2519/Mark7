@@ -12,11 +12,12 @@ def job():
     if result.modified_count > 0:
         datetime_now = datetime.now(pytz.timezone("Asia/Kolkata"))
         notify(
-            f"Testing... All Saarthis are offline now at {datetime_now.hour}:{datetime_now.minute}"
+            f"All Saarthis are offline now at {datetime_now.hour}:{datetime_now.minute}"
         )
 
 
 while True:
+    print("started")
     current_time = datetime.now(pytz.timezone("Asia/Kolkata"))
     target_time = current_time.replace(hour=22, minute=0, second=0, microsecond=0)
     if current_time > target_time:
