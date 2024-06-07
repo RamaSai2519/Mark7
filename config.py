@@ -1,4 +1,5 @@
 import google.generativeai as genai
+import os
 from pymongo import MongoClient
 from openai import OpenAI
 
@@ -6,7 +7,7 @@ user_document = None
 expert_document = None
 
 client = MongoClient(
-    "mongodb+srv://sukoon_user:Tcks8x7wblpLL9OA@cluster0.o7vywoz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    os.getenv("MONGO_KEY")
 )
 db = client["test"]
 calls_collection = db["calls"]
@@ -22,9 +23,9 @@ retry_interval_seconds = 43200
 client = OpenAI(api_key="sk-proj-aKKDe91pGa2k6HMxYksiT3BlbkFJfijdRZELYUustkm8biLd")
 
 # Configure the generative AI with the API key
-genai.configure(api_key="AIzaSyCVBseAUFeC5GcvRmKQxov4a1lh5qB3PxI")
+genai.configure(api_key=os.getenv("GEMNAI_KEY"))
 
 # Initialize the generative model
 model = genai.GenerativeModel("gemini-pro")
 
-DEEPGRAM_API_KEY = "e461122ba4cef932ffd459baf5b54825f5ab3ff9"
+DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")

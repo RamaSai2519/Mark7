@@ -1,8 +1,8 @@
 import boto3
 import os
 
-aws_access_key_id = "AKIAXYKJVMCCCSU3267B"
-aws_secret_access_key = "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"
+aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 
 def upload_transcript(transcript, id):
     s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
