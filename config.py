@@ -1,4 +1,5 @@
 import google.generativeai as genai
+import logging
 import os
 from pymongo import MongoClient
 from openai import OpenAI
@@ -9,6 +10,9 @@ expert_document = None
 client = MongoClient(
     os.getenv("MONGO_KEY")
 )
+
+logging.info('APIKEY+'+os.getenv("MONGO_KEY"))
+
 db = client["test"]
 calls_collection = db["calls"]
 users_collection = db["users"]
