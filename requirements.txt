@@ -6,3 +6,4 @@ requests
 schedule
 boto3
 nltk
+deepgram-sdk==3.*

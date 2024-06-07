@@ -22,7 +22,9 @@ retry_interval_seconds = 43200
 client = OpenAI(api_key="sk-proj-aKKDe91pGa2k6HMxYksiT3BlbkFJfijdRZELYUustkm8biLd")
 
 # Configure the generative AI with the API key
-genai.configure(api_key="AIzaSyC7GliarMdf_jCp6SbKpfzjGwW1IdgFKws")
+genai.configure(api_key="AIzaSyCVBseAUFeC5GcvRmKQxov4a1lh5qB3PxI")
 
 # Initialize the generative model
 model = genai.GenerativeModel("gemini-pro")
+
+DEEPGRAM_API_KEY = "e461122ba4cef932ffd459baf5b54825f5ab3ff9"

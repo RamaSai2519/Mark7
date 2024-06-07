@@ -1,32 +1,49 @@
 from download_audio import download_audio
-from config import client, model, retry_interval_seconds
+from config import model, retry_interval_seconds, DEEPGRAM_API_KEY
 from notify import notify
 import time
 import os
+import json
+
+from deepgram import (
+    DeepgramClient,
+    PrerecordedOptions,
+    FileSource,
+)
+
 import re
 
 
 def process_call_recording(document, user, expert, persona):
     audio_filename = f"{document['callId']}.mp3"
     download_audio(document, audio_filename)
-    audio_file = open(audio_filename, "rb")
     try:
-        translation = client.audio.translations.create(
-            model="whisper-1",
-            file=audio_file,
-            prompt=f"This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis).",
+
+        deepgram = DeepgramClient(DEEPGRAM_API_KEY)
+
+        with open(audio_filename, "rb") as file:
+            buffer_data = file.read()
+
+        payload: FileSource = {
+            "buffer": buffer_data,
+        }
+
+        options = PrerecordedOptions(
+            model="whisper-medium",
         )
-        transcript = (
-            translation.text
-            + f"\n This is a call recording between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis)."
-        )
+
+        response = deepgram.listen.prerecorded.v("1").transcribe_file(payload, options, timeout = 600)
+        # STEP 4: Print the response
+        response = response.to_json(indent=4)
+        response = json.loads(response)
+        transcript = response.get("results").get("channels")[0].get("alternatives")[0].get("transcript")
+
     except Exception as e:
         error_message = f"An error occurred processing the call ({document['callId']}): {str(e)} while transcripting the audio"
         notify(error_message)
         notify(f"Retrying after {retry_interval_seconds / 60} minutes...")
         time.sleep(retry_interval_seconds)
 
-    audio_file.close()
     os.remove(audio_filename)
 
     chat = model.start_chat(history=[])
@@ -86,8 +103,8 @@ def process_call_recording(document, user, expert, persona):
             if persona != "None":
                 chat.send_message(
                     f"""
-                                  This is the customer persona derived from previous call transcripts of the user.
-                                  Customer Persona: {persona}
+                                  This is the user persona derived from previous call transcripts of the user.
+                                  User Persona: {persona}
 
                                   Remember this and answer the next question accordingly.
                                   """
@@ -97,27 +114,34 @@ def process_call_recording(document, user, expert, persona):
 
             chat.send_message(
                 """
-                              Context: Generate a cutomer persona with the information provided above. The persona should encompass demographics, psychographics, and personality traits based on the conversation.
+                              Context: Generate a user persona with the information provided above. The persona should encompass demographics, psychographics, and personality traits based on the conversation.
 
-                              a. Customer Demographics:
+                              a. User Demographics:
                               1. Age:
                               2. Gender:
                               3. Ethnicity:
                               4. Education:
-                              5. Relationship Status:
+                              5. Marital Status Choose one(Single/Widow/Widower/Divorced/Unmarried):
                               6. Income:
-                              7. Living Status:
+                              7. Living Status Choose one(Alone/With Spouse/With Family):
                               8. Medical History:
                               9. Location/City:
                               10. Comfort with Technology:
+                              11. Standard of Living:
+                              12. Financial Status:
+                              13. Family Members:
+                              14. Work Status Choose One(Retired/Active Working/Part-Time/Projects)
+                              15. Last Company Worked For:
+                              16. Language Preference:
+                              17. Physical State Of Being: 
 
-                              b. Customer Psychographics:
+                              b. User Psychographics:
                               1. Needs:
                               2. Values:
                               3. Pain Points/ Challenges:
                               4. Motivators:
 
-                              c. Customer Personality:
+                              c. User Personality:
                               Choose one(Sanguine/Choleric/Melancholic/Phlegmatic)
                               """
             ).resolve()
