@@ -13,7 +13,7 @@ from deepgram import (
 import re
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='app.log',level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def process_call_recording(document, user, expert, persona):
     audio_filename = f"{document['callId']}.mp3"
