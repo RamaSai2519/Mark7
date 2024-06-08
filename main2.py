@@ -24,6 +24,8 @@ while True:
                     expert_document = db.experts.find_one(
                         {"_id": call.get("expert", "")}
                     )
+                    if not user_document or not expert_document:
+                        continue
                     user = user_document["name"]
                     expert = expert_document["name"]
                     notify(
