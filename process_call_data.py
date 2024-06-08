@@ -28,6 +28,9 @@ def process_call_data(call_data, user, expert, database, usercallId):
         update_query = {"callId": call["callId"]}
         update_values = {
             "$set": {
+                "callId": call["callId"],
+                "user": usercallId["_id"],
+                "expert": expert["_id"],
                 "Conversation Score": conversation_score,
                 "Score Breakup": conversation_score_details,
                 "Sentiment": sentiment,
@@ -38,4 +41,4 @@ def process_call_data(call_data, user, expert, database, usercallId):
                 "transcript_url": transcript_url,
             }
         }
-        database.calls.update_one(update_query, update_values)
+        database.callsmeta.insert_one(update_query, update_values)

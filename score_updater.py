@@ -1,14 +1,14 @@
 from scores_extractor import calculate_average_scores
 from bson.objectid import ObjectId
 from notify import notify
-from config import calls_collection, experts_collection, users_collection
+from config import callsmeta_collection, experts_collection, users_collection
 
 
 def updater():
     calculate_average_scores()
 
     conversation_scores = {}
-    for call in calls_collection.find():
+    for call in callsmeta_collection.find():
         expert_id = str(call.get("expert"))
         if "Conversation Score" not in call:
             continue
@@ -29,7 +29,7 @@ def updater():
     total_users_per_expert = {}
     user_calls_to_experts = {}
 
-    calls = calls_collection.find()
+    calls = callsmeta_collection.find()
 
     expert_names = {}
     for expert in experts_collection.find():
@@ -92,7 +92,7 @@ def updater():
         scores_per_expert[expert_id] = score
 
     calls_per_expert = {}
-    for call in calls_collection.find():
+    for call in callsmeta_collection.find():
         expert_id = str(call.get("expert"))
         calls_per_expert[expert_id] = calls_per_expert.get(expert_id, 0) + 1
 
