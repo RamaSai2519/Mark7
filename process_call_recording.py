@@ -13,15 +13,22 @@ from deepgram import (
 import re
 
 # Configure logging
-logging.basicConfig(filename='app.log',level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    filename="app.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+
 
 def process_call_recording(document, user, expert, persona):
     audio_filename = f"{document['callId']}.mp3"
     logging.info(f"Starting process for call ID: {document['callId']}")
-    
+
     download_audio(document, audio_filename)
-    logging.info(f"Downloaded audio for call ID: {document['callId']} to {audio_filename}")
-    
+    logging.info(
+        f"Downloaded audio for call ID: {document['callId']} to {audio_filename}"
+    )
+
     try:
         deepgram = DeepgramClient(DEEPGRAM_API_KEY)
         logging.info("Initialized Deepgram client")
@@ -39,10 +46,17 @@ def process_call_recording(document, user, expert, persona):
         )
 
         logging.info(f"Sending audio file {audio_filename} for transcription")
-        response = deepgram.listen.prerecorded.v("1").transcribe_file(payload, options, timeout=600)
+        response = deepgram.listen.prerecorded.v("1").transcribe_file(
+            payload, options, timeout=600
+        )
         response = response.to_json(indent=4)
         response = json.loads(response)
-        transcript = response.get("results").get("channels")[0].get("alternatives")[0].get("transcript")
+        transcript = (
+            response.get("results")
+            .get("channels")[0]
+            .get("alternatives")[0]
+            .get("transcript")
+        )
         logging.info(f"Transcription completed for call ID: {document['callId']}")
 
     except Exception as e:
@@ -50,7 +64,9 @@ def process_call_recording(document, user, expert, persona):
         notify(error_message)
         logging.error(error_message)
         notify(f"Retrying after {retry_interval_seconds / 60} minutes...")
-        logging.info(f"Retrying after {retry_interval_seconds / 60} minutes due to error")
+        logging.info(
+            f"Retrying after {retry_interval_seconds / 60} minutes due to error"
+        )
         time.sleep(retry_interval_seconds)
         return None, None, None, None, None, None, None, None
 
@@ -59,12 +75,14 @@ def process_call_recording(document, user, expert, persona):
 
     chat = model.start_chat(history=[])
     logging.info(f"Started chat session for call ID: {document['callId']}")
-    
+
     try:
         chat.send_message(
             f"I'll give you a call transcript between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis). Study the transcript and answer the questions I ask accordingly"
         ).resolve()
-        logging.info(f"Sent initial message to chat model for call ID: {document['callId']}")
+        logging.info(
+            f"Sent initial message to chat model for call ID: {document['callId']}"
+        )
 
         chat.send_message(transcript + "\n This is the transcript").resolve()
         logging.info(f"Sent transcript to chat model for call ID: {document['callId']}")
@@ -75,19 +93,27 @@ def process_call_recording(document, user, expert, persona):
             or any other form of inappropriate communication. Just say "All good" if nothing is wrong or give a summary of flagged content if found anything wrong.
             """
         ).resolve()
-        logging.info(f"Requested analysis of inappropriate content for call ID: {document['callId']}")
-        
+        logging.info(
+            f"Requested analysis of inappropriate content for call ID: {document['callId']}"
+        )
+
         summary = chat.last.text.replace("*", " ")
 
         if "All good" in summary:
-            logging.info(f"No inappropriate content found for call ID: {document['callId']}")
-            
+            logging.info(
+                f"No inappropriate content found for call ID: {document['callId']}"
+            )
+
             chat.send_message("Summarize the transcript").resolve()
-            logging.info(f"Requested transcript summary for call ID: {document['callId']}")
+            logging.info(
+                f"Requested transcript summary for call ID: {document['callId']}"
+            )
             summary = chat.last.text.replace("*", " ")
 
             chat.send_message("Give me feedback for the saarthi").resolve()
-            logging.info(f"Requested saarthi feedback for call ID: {document['callId']}")
+            logging.info(
+                f"Requested saarthi feedback for call ID: {document['callId']}"
+            )
             saarthi_feedback = chat.last.text.replace("*", " ")
 
             with open("guidelines.txt", "r", encoding="utf-8") as file:
@@ -112,7 +138,9 @@ def process_call_recording(document, user, expert, persona):
                 Find the section relating to the parameters in these guidelines before you give a score. Higher score if the guidelines are followed.
                 """
             ).resolve()
-            logging.info(f"Requested detailed conversation analysis for call ID: {document['callId']}")
+            logging.info(
+                f"Requested detailed conversation analysis for call ID: {document['callId']}"
+            )
             conversation_score_details = chat.last.text.replace("*", " ")
 
             chat.send_message("Give me a total score out of 100").resolve()
@@ -122,7 +150,9 @@ def process_call_recording(document, user, expert, persona):
             try:
                 conversation_score = int(conversation_score[0])
                 conversation_score = conversation_score / 20
-                logging.info(f"Calculated total score: {conversation_score} for call ID: {document['callId']}")
+                logging.info(
+                    f"Calculated total score: {conversation_score} for call ID: {document['callId']}"
+                )
             except Exception as e:
                 logging.error(f"Error calculating total score: {str(e)}")
                 conversation_score = 0
@@ -136,9 +166,13 @@ def process_call_recording(document, user, expert, persona):
                     Remember this and answer the next question accordingly.
                     """
                 ).resolve()
-                logging.info(f"Sent user persona to chat model for call ID: {document['callId']}")
+                logging.info(
+                    f"Sent user persona to chat model for call ID: {document['callId']}"
+                )
             else:
-                logging.info(f"No previous user persona provided for call ID: {document['callId']}")
+                logging.info(
+                    f"No previous user persona provided for call ID: {document['callId']}"
+                )
 
             chat.send_message(
                 """
@@ -173,7 +207,9 @@ def process_call_recording(document, user, expert, persona):
                 Choose one(Sanguine/Choleric/Melancholic/Phlegmatic)
                 """
             ).resolve()
-            logging.info(f"Requested user persona analysis for call ID: {document['callId']}")
+            logging.info(
+                f"Requested user persona analysis for call ID: {document['callId']}"
+            )
             customer_persona = chat.last.text.replace("*", " ")
 
             chat.send_message(
@@ -181,11 +217,15 @@ def process_call_recording(document, user, expert, persona):
                 Calculate the probability of the user calling back.
                 """
             ).resolve()
-            logging.info(f"Requested probability of callback for call ID: {document['callId']}")
+            logging.info(
+                f"Requested probability of callback for call ID: {document['callId']}"
+            )
             user_callback = chat.last.text.replace("*", " ")
 
             chat.send_message("Identify the topics they are talking about").resolve()
-            logging.info(f"Requested topic identification for call ID: {document['callId']}")
+            logging.info(
+                f"Requested topic identification for call ID: {document['callId']}"
+            )
             topics = chat.last.text.replace("*", " ")
             return (
                 transcript,
@@ -198,10 +238,14 @@ def process_call_recording(document, user, expert, persona):
                 topics,
             )
         else:
-            logging.warning(f"Inappropriate content found for call ID: {document['callId']}")
+            logging.warning(
+                f"Inappropriate content found for call ID: {document['callId']}"
+            )
             return None, None, None, None, None, None, None, None
 
     except Exception as e:
-        notify("An error occurred on process_call_recording:", str(e))
-        logging.error(f"An error occurred during chat processing for call ID: {document['callId']}: {str(e)}")
+        notify(f"An error occurred on process_call_recording:{str(e)}")
+        logging.error(
+            f"An error occurred during chat processing for call ID: {document['callId']}: {str(e)}"
+        )
         return e
