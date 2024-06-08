@@ -1,10 +1,10 @@
-from config import calls_collection, experts_collection
+from config import callsmeta_collection, experts_collection
 from bson import ObjectId
 import re
 
 
 def calls_scores_extractor():
-    calls = calls_collection.find()
+    calls = callsmeta_collection.find()
     subheading_to_key = {
         "Opening Greeting": "openingGreeting",
         "Tonality": "tonality",
@@ -26,13 +26,13 @@ def calls_scores_extractor():
                     key = subheading_to_key[subheading]
                     value = int(fraction[1])
                     update_query = {"$set": {key: value}}
-                    calls_collection.update_one({"_id": call["_id"]}, update_query)
+                    callsmeta_collection.update_one({"_id": call["_id"]}, update_query)
 
 
 def calculate_average_scores():
     calls_scores_extractor()
     experts_scores = {}
-    for call in calls_collection.find():
+    for call in callsmeta_collection.find():
         expert_id = call["expert"]
         expert_id = ObjectId(expert_id)
         if expert_id not in experts_scores:

@@ -20,6 +20,7 @@ experts_collection = db["experts"]
 fcm_tokens_collection = db["fcm_tokens"]
 errorlog_collection = db["errorlogs"]
 timings_collection = db["timings"]
+callsmeta_collection = db["callsmeta"]
 
 retry_interval_seconds = 43200
 
