@@ -1,4 +1,4 @@
-from config import callsmeta_collection, experts_collection
+from config import callsmeta_collection, experts_collection, calls_collection
 from bson import ObjectId
 import re
 
@@ -32,7 +32,7 @@ def calls_scores_extractor():
 def calculate_average_scores():
     calls_scores_extractor()
     experts_scores = {}
-    for call in callsmeta_collection.find():
+    for call in calls_collection.find():
         expert_id = call["expert"]
         expert_id = ObjectId(expert_id)
         if expert_id not in experts_scores:
@@ -46,6 +46,9 @@ def calculate_average_scores():
                 "probability": [],
                 "closingGreeting": [],
             }
+        if callsmeta_collection.find_one({"callId": call["callId"]}) is None:
+            continue
+        call = callsmeta_collection.find_one({"callId": call["callId"]})
         if call.get("openingGreeting"):
             experts_scores[expert_id]["openingGreeting"].append(call["openingGreeting"])
         if call.get("tonality"):

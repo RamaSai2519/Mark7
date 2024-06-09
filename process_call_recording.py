@@ -1,16 +1,16 @@
-import logging
-from download_audio import download_audio
 from config import model, retry_interval_seconds, DEEPGRAM_API_KEY
-from notify import notify
-import time
-import os
-import json
 from deepgram import (
     DeepgramClient,
     PrerecordedOptions,
     FileSource,
 )
+from download_audio import download_audio
+from notify import notify
+import logging
+import time
+import json
 import re
+import os
 
 # Configure logging
 logging.basicConfig(

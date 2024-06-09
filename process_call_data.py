@@ -1,6 +1,8 @@
 from process_call_recording import process_call_recording
 from upload_transcript import upload_transcript
 from sentiment import get_tonality_sentiment
+from config import callsmeta_collection, calls_collection
+
 
 def process_call_data(call_data, user, expert, database, usercallId, expertcallId):
     customer_persona = usercallId.get("Customer Persona", "None")
@@ -25,20 +27,22 @@ def process_call_data(call_data, user, expert, database, usercallId, expertcallI
         update_values = {"$set": {"Customer Persona": customer_persona}}
         database.users.update_one(update_query, update_values)
 
-        update_query = {"callId": call["callId"]}
         update_values = {
-            "$set": {
-                "callId": call["callId"],
-                "user": usercallId["_id"],
-                "expert": expertcallId["_id"],
-                "Conversation Score": conversation_score,
-                "Score Breakup": conversation_score_details,
-                "Sentiment": sentiment,
-                "Saarthi Feedback": saarthi_feedback,
-                "User Callback": user_callback,
-                "Topics": topics,
-                "Summary": summary,
-                "transcript_url": transcript_url,
-            }
+            "callId": call["callId"],
+            "user": usercallId["_id"],
+            "expert": str(expertcallId["_id"]),
+            "Conversation Score": conversation_score,
+            "Score Breakup": conversation_score_details,
+            "Sentiment": sentiment,
+            "Saarthi Feedback": saarthi_feedback,
+            "User Callback": user_callback,
+            "Topics": topics,
+            "Summary": summary,
+            "transcript_url": transcript_url,
         }
-        database.callsmeta.insert_one(update_query, update_values)
+        callsmeta_collection.insert_one(update_values)
+
+        calls_collection.update_one(
+            {"callId": call["callId"]},
+            {"$set": {"Conversation Score": conversation_score}},
+        )

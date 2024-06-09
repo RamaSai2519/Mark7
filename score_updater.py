@@ -1,14 +1,17 @@
 from scores_extractor import calculate_average_scores
 from bson.objectid import ObjectId
-from notify import notify
-from config import callsmeta_collection, experts_collection, users_collection
-
+from config import (
+    callsmeta_collection,
+    experts_collection,
+    users_collection,
+    calls_collection,
+)
 
 def updater():
     calculate_average_scores()
 
     conversation_scores = {}
-    for call in callsmeta_collection.find():
+    for call in calls_collection.find():
         expert_id = str(call.get("expert"))
         if "Conversation Score" not in call:
             continue
@@ -107,7 +110,7 @@ def updater():
                 {"_id": ObjectId(expert_id)}, {"$set": {"repeat_score": repeat_score}}
             )
         except Exception as e:
-            notify(f"Error updating expert's repeat score: {e}")
+            print(f"Error updating expert's repeat score: {e}")
         score = scores_per_expert.get(expert_id, 0)
         score = int(score)
         calls = calls_per_expert.get(expert_id, 0)
@@ -119,10 +122,11 @@ def updater():
                 {"$set": {"calls_share": normalized_calls}},
             )
         except Exception as e:
-            notify(f"Error updating calls share of expert: {e}")
+            print(f"Error updating calls share of expert: {e}")
         final_score = (score + repeat_score + normalized_calls) / 3
         final_scores[expert_id] = final_score
 
+    
     for expert_id, score in final_scores.items():
         score = int(score)
         calls = calls_per_expert.get(expert_id, 0)
@@ -133,4 +137,5 @@ def updater():
                 {"_id": ObjectId(expert_id)}, {"$set": {"total_score": score}}
             )
         except Exception as e:
-            notify(f"Error updating final score of expert: {e}")
+            print(f"Error updating final score of expert: {e}")
+

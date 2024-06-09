@@ -1,8 +1,8 @@
 from process_call_data import process_call_data
+from Score_corrector import corrector
 from score_updater import updater
 from notify import notify
 from config import db
-from Score_corrector import corrector
 import time
 
 

@@ -30,11 +30,9 @@ with calls_collection.watch(pipeline) as stream:
                 notify(
                     f"Processing call {str(call["callId"])} between {user} and {expert}"
                 )
-                print(f"Processing call {str(call['callId'])} between {user} and {expert}")
                 process_call_data([call], user, expert, db, user_document)
                 corrector(call["callId"])
                 updater()
             except Exception as e:
                 error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)} on main loop"
                 notify(error_message)
-                print(error_message)
