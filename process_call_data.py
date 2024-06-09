@@ -2,7 +2,7 @@ from process_call_recording import process_call_recording
 from upload_transcript import upload_transcript
 from sentiment import get_tonality_sentiment
 
-def process_call_data(call_data, user, expert, database, usercallId):
+def process_call_data(call_data, user, expert, database, usercallId, expertcallId):
     customer_persona = usercallId.get("Customer Persona", "None")
 
     for call in call_data:
@@ -30,7 +30,7 @@ def process_call_data(call_data, user, expert, database, usercallId):
             "$set": {
                 "callId": call["callId"],
                 "user": usercallId["_id"],
-                "expert": expert["_id"],
+                "expert": expertcallId["_id"],
                 "Conversation Score": conversation_score,
                 "Score Breakup": conversation_score_details,
                 "Sentiment": sentiment,

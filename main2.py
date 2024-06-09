@@ -31,7 +31,7 @@ while True:
                     notify(
                         f"Processing call {str(call.get('callId'))} between {user} and {expert}"
                     )
-                    process_call_data([call], user, expert, db, user_document)
+                    process_call_data([call], user, expert, db, user_document, expert_document)
                     corrector(call["callId"])
                     updater()
                 except Exception as e:
