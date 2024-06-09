@@ -3,6 +3,9 @@ import logging
 import os
 from pymongo import MongoClient
 from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
 
 user_document = None
 expert_document = None

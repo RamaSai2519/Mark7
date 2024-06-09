@@ -6,4 +6,5 @@ requests
 schedule
 boto3
 nltk
+python-dotenv
 deepgram-sdk==3.*
