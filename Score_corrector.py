@@ -1,4 +1,5 @@
-from config import callsmeta_collection
+from config import callsmeta_collection, calls_collection
+
 
 # Function to extract and sum the score fractions from a call document
 def sum_score_fractions(call_document):
@@ -32,6 +33,6 @@ def corrector(id):
     # Iterate over each call and update the Conversation Score
     for call_id, scores in call_scores.items():
         score = scores["total_score"] / 20
-        callsmeta_collection.update_one(
+        calls_collection.update_one(
             {"callId": call_id}, {"$set": {"Conversation Score": score}}
         )
