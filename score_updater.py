@@ -134,6 +134,3 @@ def updater():
             )
         except Exception as e:
             notify(f"Error updating final score of expert: {e}")
-
-
-updater()
