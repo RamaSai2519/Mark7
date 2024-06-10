@@ -19,6 +19,8 @@ with calls_collection.watch(pipeline) as stream:
         call = change["fullDocument"]
         user_document = users_collection.find_one({"_id": call["user"]})
         expert_document = experts_collection.find_one({"_id": call["expert"]})
+        if not user_document or not expert_document:
+            continue
         duration = call["duration"] if "duration" in call else "00:00:00"
         seconds = sum(
             int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
@@ -36,3 +38,4 @@ with calls_collection.watch(pipeline) as stream:
             except Exception as e:
                 error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)} on main loop"
                 notify(error_message)
+                continue

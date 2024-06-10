@@ -67,7 +67,6 @@ def process_call_recording(document, user, expert, persona):
         logging.info(
             f"Retrying after {retry_interval_seconds / 60} minutes due to error"
         )
-        time.sleep(retry_interval_seconds)
         return None, None, None, None, None, None, None, None
 
     os.remove(audio_filename)
