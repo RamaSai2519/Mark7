@@ -21,6 +21,8 @@ def process_call_data(call_data, user, expert, database, usercallId, expertcallI
 
         sentiment = get_tonality_sentiment(transcript)
 
+        
+
         transcript_url = upload_transcript(transcript, call["callId"])
 
         update_query = {"_id": usercallId["_id"]}
