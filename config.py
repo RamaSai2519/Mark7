@@ -26,7 +26,6 @@ timings_collection = db["timings"]
 callsmeta_collection = db["callsmeta"]
 schedules_collection = db["schedules"]
 
-retry_interval_seconds = 43200
 
 # Initialize the OpenAI client with the API key
 client = OpenAI(api_key="sk-proj-aKKDe91pGa2k6HMxYksiT3BlbkFJfijdRZELYUustkm8biLd")
