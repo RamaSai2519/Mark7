@@ -24,6 +24,7 @@ fcm_tokens_collection = db["fcm_tokens"]
 errorlog_collection = db["errorlogs"]
 timings_collection = db["timings"]
 callsmeta_collection = db["callsmeta"]
+schedules_collection = db["schedules"]
 
 retry_interval_seconds = 43200
 
