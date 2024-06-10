@@ -32,7 +32,9 @@ with calls_collection.watch(pipeline) as stream:
                 notify(
                     f"Processing call {str(call["callId"])} between {user} and {expert}"
                 )
-                process_call_data([call], user, expert, db, user_document)
+                call_processed = process_call_data(call, user, expert, db, user_document)
+                if not call_processed:
+                    continue
                 corrector(call["callId"])
                 updater()
             except Exception as e:

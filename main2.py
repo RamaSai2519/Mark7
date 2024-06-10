@@ -3,7 +3,6 @@ from Score_corrector import corrector
 from score_updater import updater
 from notify import notify
 from config import db
-import time
 
 
 while True:
@@ -31,10 +30,13 @@ while True:
                     notify(
                         f"Processing call {str(call.get('callId'))} between {user} and {expert}"
                     )
-                    process_call_data([call], user, expert, db, user_document, expert_document)
+                    call_processed = process_call_data(call, user, expert, db, user_document, expert_document)
+                    if not call_processed:
+                        continue
+
                     corrector(call["callId"])
                     updater()
                 except Exception as e:
                     error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)} on backup loop"
                     notify(error_message)
-                    time.sleep(3600)
+                    continue

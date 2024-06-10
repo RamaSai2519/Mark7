@@ -1,4 +1,4 @@
-from config import model, retry_interval_seconds, DEEPGRAM_API_KEY
+from config import model, DEEPGRAM_API_KEY
 from deepgram import (
     DeepgramClient,
     PrerecordedOptions,
@@ -63,10 +63,6 @@ def process_call_recording(document, user, expert, persona):
         error_message = f"An error occurred processing the call ({document['callId']}): {str(e)} while transcribing the audio"
         notify(error_message)
         logging.error(error_message)
-        notify(f"Retrying after {retry_interval_seconds / 60} minutes...")
-        logging.info(
-            f"Retrying after {retry_interval_seconds / 60} minutes due to error"
-        )
         return None, None, None, None, None, None, None, None
 
     os.remove(audio_filename)
@@ -247,4 +243,4 @@ def process_call_recording(document, user, expert, persona):
         logging.error(
             f"An error occurred during chat processing for call ID: {document['callId']}: {str(e)}"
         )
-        return e
+        return None, None, None, None, None, None, None, None
