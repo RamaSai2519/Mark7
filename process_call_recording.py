@@ -1,16 +1,10 @@
 from config import model, DEEPGRAM_API_KEY
-from deepgram import (
-    DeepgramClient,
-    PrerecordedOptions,
-    FileSource,
-)
 from download_audio import download_audio
 from notify import notify
 import logging
-import time
-import json
 import re
 import os
+import subprocess
 
 
 
@@ -24,62 +18,43 @@ def process_call_recording(document, user, expert, persona):
     )
 
     try:
-        deepgram = DeepgramClient(DEEPGRAM_API_KEY)
         logging.info("Initialized Deepgram client")
 
-        with open(audio_filename, "rb") as file:
-            buffer_data = file.read()
-            logging.info(f"Read audio file {audio_filename}")
+        curl_command = [
+            'curl',
+            '--request', 'POST',
+            '--url', 'https://api.deepgram.com/v1/listen?model=whisper-large&diarize=true&punctuate=true&utterances=true',
+            '--header', f'Authorization: Token {DEEPGRAM_API_KEY}',
+            '--header', 'content-type: audio/mp3',
+            '--data-binary', f'@{audio_filename}'
+        ]
 
-        payload: FileSource = {
-            "buffer": buffer_data,
-        }
+        # Run the curl command using subprocess
+        result = subprocess.run(curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-        options = PrerecordedOptions(
-            model="whisper-large",
-            language="en",
-            diarize=True, 
-            punctuate= True,
-            utterances= True
-        )
+        # Check for errors
+        if result.returncode != 0:
+            print(f"Error: {result.stderr}")
+            return None, None, None, None, None, None, None, None
+        else:
+            # Use jq to process the result
+            jq_command = [
+                'jq',
+                '-r',
+                '.results.utterances[] | "[Speaker:\(.speaker)] \(.transcript)"'
+            ]
 
-        logging.info(f"Sending audio file {audio_filename} for transcription")
-        response = deepgram.listen.prerecorded.v("1").transcribe_file(
-            payload, options, timeout=600
-        )
-       
-        response = response.to_json(indent=4)
-        response = json.loads(response)
-        # Check if the response contains the required structure
-        if not response.get("results"):
-            raise ValueError("No results in response")
+            # Run jq command using subprocess and pipe the result from curl to jq
+            jq_result = subprocess.run(jq_command, input=result.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-        channels = response.get("results").get("channels", [])
-        if not channels:
-            raise ValueError("No channels in response")
+            if jq_result.returncode != 0:
+                print(f"Error: {jq_result.stderr}")
+                return None, None, None, None, None, None, None, None
+            else:
+                # Print the processed result
+                print(jq_result.stdout)
+                transcript = jq_result.stdout
 
-        alternatives = channels[0].get("alternatives", [])
-        if not alternatives:
-            raise ValueError("No alternatives in response")
-
-        words = alternatives[0].get("words", [])
-        if not words:
-            raise ValueError("No words in response")
-
-        # Retrieve conversation transcript in the specified format
-        transcript_dict = {}
-        for word_info in words:
-            speaker = word_info.get("speaker")
-            word = word_info.get("word")
-            if speaker not in transcript_dict:
-                transcript_dict[speaker] = []
-            transcript_dict[speaker].append(word)
-
-        transcript = ""
-        for speaker, words in transcript_dict.items():
-            transcript += f"[Speaker:{speaker}] {' '.join(words)}\n"
-        
-        print(transcript)
         logging.info(f"Transcription completed for call ID: {document['callId']}")
 
     except Exception as e:
@@ -96,7 +71,7 @@ def process_call_recording(document, user, expert, persona):
 
     try:
         chat.send_message(
-            f"I'll give you a call transcript between the user {user} and the expert(saarthi) {expert}, here you have to identify user and sarathi (saarthi) from the converstation where it will be mentioned as speaker 0, speaker 1 and sometimes speaker 2, who connected via a website called 'Sukoon.Love' over the system generated phone call,a platform for seniors to have conversations and seek expert guidance from experts(sarathis).Analyze the transcript and answer the questions I ask accordingly, with the confidence score between 0 to 1, Please be strict in analysing and give correct data only"
+            f"I'll give you a call transcript between the user {user} and the sarathi {expert}. You have to correctly identify which Speaker is the User and which Speaker is the Sarathi (Generally Sarathi will be the one who ask the User questions about their routine and how they are doing. Also you can identify which speaker is Sarathi by their name). The user and sarathi connected via a website called 'Sukoon.Love', a platform for people to have conversations and seek guidance from Sarathis. Analyze the transcript and answer the questions I ask accordingly."
         ).resolve()
         logging.info(
             f"Sent initial message to chat model for call ID: {document['callId']}"
@@ -177,27 +152,27 @@ def process_call_recording(document, user, expert, persona):
                 logging.error(f"Error calculating total score: {str(e)}")
                 conversation_score = 0
 
-            if persona != "None":
-                chat.send_message(
-                    f"""
-                    This is the user persona derived from previous call transcripts of the user.
-                    User Persona: {persona}
+            # if persona != "None":
+            #     chat.send_message(
+            #         f"""
+            #         This is the user persona derived from previous call transcripts of the user.
+            #         User Persona: {persona}
 
-                    Remember this and answer the next question accordingly.
-                    with the confidence score between 0 to 1
-                    """
-                ).resolve()
-                logging.info(
-                    f"Sent user persona to chat model for call ID: {document['callId']}"
-                )
-            else:
-                logging.info(
-                    f"No previous user persona provided for call ID: {document['callId']}"
-                )
+            #         Remember this and answer the next question accordingly.
+            #         with the confidence score between 0 to 1
+            #         """
+            #     ).resolve()
+            #     logging.info(
+            #         f"Sent user persona to chat model for call ID: {document['callId']}"
+            #     )
+            # else:
+            #     logging.info(
+            #         f"No previous user persona provided for call ID: {document['callId']}"
+            #     )
 
             chat.send_message(
                 """
-                Context: Generate a user persona with the information provided above. The persona should encompass demographics, psychographics, and personality traits based on the conversation.
+                Context: Generate a user persona from the transcript provided above. Use only the lines which the User aid not the sarathi from the transcript to generate this persona. The persona should encompass demographics, psychographics, and personality traits based on the conversation. Specify the reason also for every field.
 
                 a. User Demographics:
                 1. Age:
