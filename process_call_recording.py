@@ -1,16 +1,10 @@
 from config import model, DEEPGRAM_API_KEY
-from deepgram import (
-    DeepgramClient,
-    PrerecordedOptions,
-    FileSource,
-)
 from download_audio import download_audio
 from notify import notify
 import logging
-import time
-import json
 import re
 import os
+import subprocess
 
 
 
@@ -24,62 +18,44 @@ def process_call_recording(document, user, expert, persona):
     )
 
     try:
-        deepgram = DeepgramClient(DEEPGRAM_API_KEY)
         logging.info("Initialized Deepgram client")
 
-        with open(audio_filename, "rb") as file:
-            buffer_data = file.read()
-            logging.info(f"Read audio file {audio_filename}")
+        curl_command = [
+            'curl',
+            '--request', 'POST',
+            '--url', 'https://api.deepgram.com/v1/listen?model=whisper-large&diarize=true&punctuate=true&utterances=true',
+            '--header', f'Authorization: Token {DEEPGRAM_API_KEY}',
+            '--header', 'content-type: audio/mp3',
+            '--data-binary', f'@{audio_filename}'
+        ]
 
-        payload: FileSource = {
-            "buffer": buffer_data,
-        }
+        # Run the curl command using subprocess
+        result = subprocess.run(curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-        options = PrerecordedOptions(
-            model="whisper-large",
-            language="en",
-            diarize=True, 
-            punctuate= True,
-            utterances= True
-        )
+        # Check for errors
+        if result.returncode != 0:
+            print(f"Error: {result.stderr}")
+            return None, None, None, None, None, None, None, None
+        else:
+            # Use jq to process the result
+            jq_command = [
+                'jq',
+                '-r',
+                '.results.utterances[] | "[Speaker:\(.speaker)] \(.transcript)"'
+            ]
 
-        logging.info(f"Sending audio file {audio_filename} for transcription")
-        response = deepgram.listen.prerecorded.v("1").transcribe_file(
-            payload, options, timeout=600
-        )
-       
-        response = response.to_json(indent=4)
-        response = json.loads(response)
-        # Check if the response contains the required structure
-        if not response.get("results"):
-            raise ValueError("No results in response")
+            # Run jq command using subprocess and pipe the result from curl to jq
+            jq_result = subprocess.run(jq_command, input=result.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-        channels = response.get("results").get("channels", [])
-        if not channels:
-            raise ValueError("No channels in response")
+            if jq_result.returncode != 0:
+                print(f"Error: {jq_result.stderr}")
+                return None, None, None, None, None, None, None, None
+            else:
+                # Print the processed result
+                print(jq_result.stdout)
+                transcript = jq_result.stdout
+        # transcript = "[Speaker:0] Hello.\n[Speaker:1] Namaste.\n[Speaker:1] Sir,\n[Speaker:1] I am speaking from school.love.\n[Speaker:0] I was just testing if everything is going well.\n[Speaker:0] How are you?\n[Speaker:1] I am fine.\n[Speaker:0] You are good.\n[Speaker:0] How are the calls coming? Are the calls getting disconnected?\n[Speaker:1] Calls\n[Speaker:1] are coming less now but they are continuing.\n[Speaker:1] Because yesterday's\n[Speaker:1] call\n[Speaker:1] was\n[Speaker:1] about\n[Speaker:0] yesterday or day before yesterday. So it was more than one hour and it went well. Without any break, disturbance, clear. Okay, okay, okay. Good, good, good. Okay, calls will start coming. Now calls are coming less because we are making some changes.\n[Speaker:0] So\n[Speaker:0] don't worry about that. We'll start getting calls.\n[Speaker:0] Okay.\n[Speaker:0] Okay? Okay. And how's the weather here?\n[Speaker:1] The weather is good.\n[Speaker:0] Great. It's raining here Yes, it's raining\n[Speaker:0] Ok, you said you are from Bangalore?\n[Speaker:1] No, no, I am from Nashik, Nashik, Maharashtra\n[Speaker:1] Nashik, ok\n[Speaker:0] Near Mumbai, near Shirdi I know,\n[Speaker:0] I am from Bhopal,\n[Speaker:0] so when I come,\n[Speaker:0] I see\n[Speaker:0] Nasik,\n[Speaker:0] when I come from Bike Hike, I travel. Yes, yes.\n[Speaker:0] Ok. Actually, I want to talk to you for 5 minutes.\n[Speaker:0] 5 minutes, because a system runs after 5 minutes call.\n[Speaker:0] So,\n[Speaker:0] you are free now, right?\n[Speaker:0] Yes, I can. I want to talk about 2-3 aspects. Let's talk about Nasik Seher. And then I will talk about my personal life. So, based on that, there are some things that run\n[Speaker:1] I have to validate them properly\n[Speaker:0] Yes\n[Speaker:0] Ok\n[Speaker:0] So, now you tell me a little about Nasik\n[Speaker:0] Yes What is Nasik?\n[Speaker:1] First thing is that they were religious\n[Speaker:1] because\n[Speaker:1] the place\n[Speaker:1] where the statue was placed,\n[Speaker:1] Lord Ram lived there.\n[Speaker:1] So for this,\n[Speaker:1] the first\n[Speaker:1] religious place of Nashik is Godavari.\n[Speaker:1] Ram lived there and from here, Ravan kidnapped Sita.\n[Speaker:1] This is how it is said.\n[Speaker:1] And the second important thing is\n[Speaker:1] Shurpanakha,\n[Speaker:1] who was the sister of Ravana,\n[Speaker:1] her nose was\n[Speaker:1] cut off by Lakshmana.\n[Speaker:1] That is\n[Speaker:1] why the nose is called Nachik in Sanskrit.\n[Speaker:1] That is why the city's name is Nachik. And he has\n[Speaker:1] a Jyotirlingam\n[Speaker:1] called Brahmakeshwar\n[Speaker:1] where Gautam Rishi did tapasya raya\n[Speaker:1] and in north India there was Ganga and in south India there was no river\n[Speaker:1] so Gautam Rishi did Mahadev's tapasya raya and brought Ganga here. He told Mahadev to keep it in Jata\n[Speaker:1] because its pressure is too much.\n[Speaker:1] And after that,\n[Speaker:1] Mahadev's\n[Speaker:1] residence was here, so\n[Speaker:1] the Jyotirlingam of Tambakeshwar was\n[Speaker:1] made.\n[Speaker:0] This is the religious history. And that is why I made a comeback and called Jyotirlingam Maharaj Jyotirlingam this is my religious history\n[Speaker:1] and now Nashik\n[Speaker:1] is a\n[Speaker:1] good climate\n[Speaker:1] city\n[Speaker:1] where to live etc\n[Speaker:1] because there is not much heat and it is cold it is medium\n[Speaker:1] so it is a religious place and good to live\n[Speaker:1] I used to live in Kuala Lumpur, but after retirement I thought that\n[Speaker:1] Nashik is a good city to live in.\n[Speaker:1] So,\n[Speaker:1] tell us a little about yourself.\n[Speaker:0] Okay,\n[Speaker:0] I am from MP,\n[Speaker:0] there is a place called Bhopal. I am from Bhopal\n[Speaker:0] and I am married. I\n[Speaker:0] got married in 2020.\n[Speaker:0] I have two brothers.\n[Speaker:0] My parents live in Kanpur.\n[Speaker:0] My father is a physiotherapist.\n[Speaker:0] My mother is a housewife.\n[Speaker:0] I have been to Nashik.\n[Speaker:0] I\n[Speaker:0] have\n[Speaker:0] been to Nashik. I have brought my parents from Keshavar. Yeah.\n[Speaker:0] And my sister lives in Pune.\n[Speaker:0] Yeah.\n[Speaker:0] My sister\n[Speaker:0] lives in Pune.\n[Speaker:0] And\n[Speaker:0] I am a software engineer and I live in Bangalore.\n[Speaker:0] I have worked\n[Speaker:0] with point switch and other companies.\n[Speaker:0] My primary interest is in software\n[Speaker:0] and a little bit in spirituality.\n[Speaker:0] These are my two primary interests.\n[Speaker:0] And that's all about me.\n[Speaker:0] Yes.\n[Speaker:0] Yes. And how will Nasik\n[Speaker:0] reach if someone is coming from Bangalore?\n[Speaker:0] So how can they come?\n[Speaker:1] There is a train from Bangalore,\n[Speaker:1] but\n[Speaker:1] they can also come by flight because Nasik has an airport as well. Okay.\n[Speaker:1] Mumbai-Nashik\n[Speaker:1] flight is more than enough.\n[Speaker:1] Mumbai-Bangalore\n[Speaker:1] flight.\n[Speaker:1] You can come to Mumbai from Bangalore.\n[Speaker:1] From\n[Speaker:1] Mumbai,\n[Speaker:1] you\n[Speaker:1] can\n[Speaker:1] reach Nashik comfortably in a 3-hour journey.\n[Speaker:1] Okay. And Nashik has good food and accommodation.\n[Speaker:1] We have all types of hotels.\n[Speaker:1] Food is also available. We have all varieties.\n[Speaker:1] And for new people,\n[Speaker:1] we\n[Speaker:1] have a wine capital here.\n[Speaker:1] We have wineries here.\n[Speaker:1] So, it is good.\n[Speaker:0] And secondly, can you come from Pune?\n[Speaker:0] Because from Bangalore to Pune is a long way\n[Speaker:1] correct correct from Pune\n[Speaker:1] to\n[Speaker:1] Bangalore\n[Speaker:1] I think it is 1500 km but from Pune it is just 200 KM\n[Speaker:1] and from Pudhe,\n[Speaker:1] there is a continuous bus\n[Speaker:1] every 30 minutes\n[Speaker:1] and it takes around 5 hours,\n[Speaker:1] if there is a traffic jam then it takes 5 hours if you come by bus\n[Speaker:1] it takes 4 hours\n[Speaker:1] the road is good this is a big highway\n[Speaker:1] big highway means 4 lane highway\n[Speaker:0] yes\n[Speaker:0] ok sir\n[Speaker:0] it was nice talking to you\n[Speaker:0] yes\n[Speaker:0] ok thank you have a nice day Okay, okay, okay. Okay, sir. I really enjoyed talking to you. Yeah, not a problem. Okay, thank you. Thank you, sir. Have a nice day.\n"
 
-        alternatives = channels[0].get("alternatives", [])
-        if not alternatives:
-            raise ValueError("No alternatives in response")
-
-        words = alternatives[0].get("words", [])
-        if not words:
-            raise ValueError("No words in response")
-
-        # Retrieve conversation transcript in the specified format
-        transcript_dict = {}
-        for word_info in words:
-            speaker = word_info.get("speaker")
-            word = word_info.get("word")
-            if speaker not in transcript_dict:
-                transcript_dict[speaker] = []
-            transcript_dict[speaker].append(word)
-
-        transcript = ""
-        for speaker, words in transcript_dict.items():
-            transcript += f"[Speaker:{speaker}] {' '.join(words)}\n"
-        
-        print(transcript)
         logging.info(f"Transcription completed for call ID: {document['callId']}")
 
     except Exception as e:
@@ -96,7 +72,7 @@ def process_call_recording(document, user, expert, persona):
 
     try:
         chat.send_message(
-            f"I'll give you a call transcript between the user {user} and the expert(saarthi) {expert}, here you have to identify user and sarathi (saarthi) from the converstation where it will be mentioned as speaker 0, speaker 1 and sometimes speaker 2, who connected via a website called 'Sukoon.Love' over the system generated phone call,a platform for seniors to have conversations and seek expert guidance from experts(sarathis).Analyze the transcript and answer the questions I ask accordingly, with the confidence score between 0 to 1, Please be strict in analysing and give correct data only"
+            f"I'll give you a call transcript between the user {user} and the sarathi {expert}. You have to correctly identify which Speaker is the User and which Speaker is the Sarathi (Generally Sarathi will be the one who ask the User questions about their routine and how they are doing. Also you can identify which speaker is Sarathi by their name). The user and sarathi connected via a website called 'Sukoon.Love', a platform for people to have conversations and seek guidance from Sarathis. Analyze the transcript and answer the questions I ask accordingly."
         ).resolve()
         logging.info(
             f"Sent initial message to chat model for call ID: {document['callId']}"
@@ -177,27 +153,27 @@ def process_call_recording(document, user, expert, persona):
                 logging.error(f"Error calculating total score: {str(e)}")
                 conversation_score = 0
 
-            if persona != "None":
-                chat.send_message(
-                    f"""
-                    This is the user persona derived from previous call transcripts of the user.
-                    User Persona: {persona}
+            # if persona != "None":
+            #     chat.send_message(
+            #         f"""
+            #         This is the user persona derived from previous call transcripts of the user.
+            #         User Persona: {persona}
 
-                    Remember this and answer the next question accordingly.
-                    with the confidence score between 0 to 1
-                    """
-                ).resolve()
-                logging.info(
-                    f"Sent user persona to chat model for call ID: {document['callId']}"
-                )
-            else:
-                logging.info(
-                    f"No previous user persona provided for call ID: {document['callId']}"
-                )
+            #         Remember this and answer the next question accordingly.
+            #         with the confidence score between 0 to 1
+            #         """
+            #     ).resolve()
+            #     logging.info(
+            #         f"Sent user persona to chat model for call ID: {document['callId']}"
+            #     )
+            # else:
+            #     logging.info(
+            #         f"No previous user persona provided for call ID: {document['callId']}"
+            #     )
 
             chat.send_message(
                 """
-                Context: Generate a user persona with the information provided above. The persona should encompass demographics, psychographics, and personality traits based on the conversation.
+                Context: Generate a user persona from the transcript provided above. Use only the lines which the User aid not the sarathi from the transcript to generate this persona. The persona should encompass demographics, psychographics, and personality traits based on the conversation. Specify the reason also for every field.
 
                 a. User Demographics:
                 1. Age:
