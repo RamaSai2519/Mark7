@@ -3,7 +3,14 @@ from Score_corrector import corrector
 from score_updater import updater
 from notify import notify
 from config import db
+import logging
 
+# Configure logging
+logging.basicConfig(
+    filename="app.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 while True:
     successful_calls = list(db.calls.find({"status": "successfull"}))
@@ -24,7 +31,7 @@ while True:
                         {"_id": call.get("expert", "")}
                     )
                     if not user_document or not expert_document:
-                        continue
+                        continue 
                     user = user_document["name"]
                     expert = expert_document["name"]
                     notify(

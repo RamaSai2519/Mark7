@@ -12,12 +12,6 @@ import json
 import re
 import os
 
-# Configure logging
-logging.basicConfig(
-    filename="app.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
 
 
 def process_call_recording(document, user, expert, persona):
@@ -42,21 +36,50 @@ def process_call_recording(document, user, expert, persona):
         }
 
         options = PrerecordedOptions(
-            model="whisper-medium",
+            model="whisper-large",
+            language="en",
+            diarize=True, 
+            punctuate= True,
+            utterances= True
         )
 
         logging.info(f"Sending audio file {audio_filename} for transcription")
         response = deepgram.listen.prerecorded.v("1").transcribe_file(
             payload, options, timeout=600
         )
+       
         response = response.to_json(indent=4)
         response = json.loads(response)
-        transcript = (
-            response.get("results")
-            .get("channels")[0]
-            .get("alternatives")[0]
-            .get("transcript")
-        )
+        # Check if the response contains the required structure
+        if not response.get("results"):
+            raise ValueError("No results in response")
+
+        channels = response.get("results").get("channels", [])
+        if not channels:
+            raise ValueError("No channels in response")
+
+        alternatives = channels[0].get("alternatives", [])
+        if not alternatives:
+            raise ValueError("No alternatives in response")
+
+        words = alternatives[0].get("words", [])
+        if not words:
+            raise ValueError("No words in response")
+
+        # Retrieve conversation transcript in the specified format
+        transcript_dict = {}
+        for word_info in words:
+            speaker = word_info.get("speaker")
+            word = word_info.get("word")
+            if speaker not in transcript_dict:
+                transcript_dict[speaker] = []
+            transcript_dict[speaker].append(word)
+
+        transcript = ""
+        for speaker, words in transcript_dict.items():
+            transcript += f"[Speaker:{speaker}] {' '.join(words)}\n"
+        
+        print(transcript)
         logging.info(f"Transcription completed for call ID: {document['callId']}")
 
     except Exception as e:
@@ -73,19 +96,19 @@ def process_call_recording(document, user, expert, persona):
 
     try:
         chat.send_message(
-            f"I'll give you a call transcript between the user {user} and the expert(saarthi) {expert}, who connected via a website called 'Sukoon.Love', a platform for seniors to have conversations and seek expert guidance from experts(saarthis). Study the transcript and answer the questions I ask accordingly"
+            f"I'll give you a call transcript between the user {user} and the expert(saarthi) {expert}, here you have to identify user and sarathi (saarthi) from the converstation where it will be mentioned as speaker 0, speaker 1 and sometimes speaker 2, who connected via a website called 'Sukoon.Love' over the system generated phone call,a platform for seniors to have conversations and seek expert guidance from experts(sarathis).Analyze the transcript and answer the questions I ask accordingly, with the confidence score between 0 to 1, Please be strict in analysing and give correct data only"
         ).resolve()
         logging.info(
             f"Sent initial message to chat model for call ID: {document['callId']}"
         )
 
-        chat.send_message(transcript + "\n This is the transcript").resolve()
+        chat.send_message(transcript + "\n This is the transcript for the call").resolve()
         logging.info(f"Sent transcript to chat model for call ID: {document['callId']}")
 
         chat.send_message(
             """
-            Analyze the transcript and flag any instances of inappropriate language or behavior. Detect any offensive language, insults, harassment, discrimination, 
-            or any other form of inappropriate communication. Just say "All good" if nothing is wrong or give a summary of flagged content if found anything wrong.
+            Analyze the transcript and flag any instances of inappropriate language or behavior. Detect any offensive language, insults, harassment, discrimination,religious 
+            or any other form of inappropriate communication. Just say "All good" if nothing is wrong or give a summary of flagged content if found anything wrong,  with the confidence score between 0 to 1.  Please be strict in analysing and give correct data only
             """
         ).resolve()
         logging.info(
@@ -99,13 +122,13 @@ def process_call_recording(document, user, expert, persona):
                 f"No inappropriate content found for call ID: {document['callId']}"
             )
 
-            chat.send_message("Summarize the transcript").resolve()
+            chat.send_message("Summarize the transcript, with the confidence score between 0 to 1").resolve()
             logging.info(
                 f"Requested transcript summary for call ID: {document['callId']}"
             )
             summary = chat.last.text.replace("*", " ")
 
-            chat.send_message("Give me feedback for the saarthi").resolve()
+            chat.send_message("Give me feedback for the saarthi(sarathi, agent,expert,experts)").resolve()
             logging.info(
                 f"Requested saarthi feedback for call ID: {document['callId']}"
             )
@@ -131,6 +154,8 @@ def process_call_recording(document, user, expert, persona):
                 {guidelines}
 
                 Find the section relating to the parameters in these guidelines before you give a score. Higher score if the guidelines are followed.
+                with the confidence score between 0 to 1,
+                 Please be strict in analysing and give correct data only
                 """
             ).resolve()
             logging.info(
@@ -159,6 +184,7 @@ def process_call_recording(document, user, expert, persona):
                     User Persona: {persona}
 
                     Remember this and answer the next question accordingly.
+                    with the confidence score between 0 to 1
                     """
                 ).resolve()
                 logging.info(
@@ -200,6 +226,8 @@ def process_call_recording(document, user, expert, persona):
 
                 c. User Personality:
                 Choose one(Sanguine/Choleric/Melancholic/Phlegmatic)
+                with the confidence score between 0 to 1,
+                 Please be strict in analysing and give correct data only
                 """
             ).resolve()
             logging.info(
