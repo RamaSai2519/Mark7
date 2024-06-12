@@ -51,4 +51,4 @@ while True:
                     {"_id": schedule["_id"]}, {"$set": {"status": "pending"}}
                 )
 
-    sleep(30 * 60)  # Check every 30 minutes
+    sleep(10 * 60)  # Check every 10 minutes
