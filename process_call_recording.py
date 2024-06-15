@@ -93,6 +93,16 @@ def process_call_recording(document, user, expert, persona):
         summary = chat.last.text.replace("*", " ")
 
         if "All good" in summary:
+
+            chat.send_message(
+                """
+                Calculate probability of the user calling back only on the basis of conversation don't include platform here, don't juudge on the basis of tonality just look for call back, dont calculate on the emotions, Be sure in giving data don't say may be, give TRUE or FALSE, and explanation in 10 words.
+                """
+            ).resolve()
+            logging.info(
+                f"Requested probability of callback for call ID: {document['callId']}"
+            )
+            user_callback = chat.last.text.replace("*", " ")
             logging.info(
                 f"No inappropriate content found for call ID: {document['callId']}"
             )
@@ -209,16 +219,6 @@ def process_call_recording(document, user, expert, persona):
                 f"Requested user persona analysis for call ID: {document['callId']}"
             )
             customer_persona = chat.last.text.replace("*", " ")
-
-            chat.send_message(
-                """
-                Calculate the probability of the user calling back.
-                """
-            ).resolve()
-            logging.info(
-                f"Requested probability of callback for call ID: {document['callId']}"
-            )
-            user_callback = chat.last.text.replace("*", " ")
 
             chat.send_message("Identify the topics they are talking about").resolve()
             logging.info(
