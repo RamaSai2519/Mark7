@@ -8,7 +8,7 @@ import subprocess
 
 
 
-def process_call_recording(document, user, expert, persona):
+def process_call_recording(document, user, expert, persona, user_calls):
     audio_filename = f"{document['callId']}.mp3"
     logging.info(f"Starting process for call ID: {document['callId']}")
 
@@ -119,8 +119,14 @@ def process_call_recording(document, user, expert, persona):
             )
             saarthi_feedback = chat.last.text.replace("*", " ")
 
-            with open("guidelines.txt", "r", encoding="utf-8") as file:
-                guidelines = file.read()
+            if user_calls == 1:
+
+                with open("guidelines.txt", "r", encoding="utf-8") as file:
+                    guidelines = file.read()
+            else:
+                with open("guidelines2.txt", "r", encoding="utf-8") as file:
+                    guidelines = file.read()
+
             logging.info("Read guidelines from guidelines.txt")
 
             chat.send_message(
@@ -179,13 +185,20 @@ def process_call_recording(document, user, expert, persona):
             #     logging.info(
             #         f"No previous user persona provided for call ID: {document['callId']}"
             #     )
+            with open("topics.txt", "r", encoding="utf-8") as file:
+                topics = file.read()
 
+            chat.send_message(f"Identify the topics they are talking about from the {topics}").resolve()
+            logging.info(
+                f"Requested topic identification for call ID: {document['callId']}"
+            )
+            topics = chat.last.text.replace("*", " ")
+            
             chat.send_message(
                 """
                 Context: Generate a user persona from the transcript provided above. Use only the lines which the User aid not the sarathi from the transcript to generate this persona. The persona should encompass demographics, psychographics, and personality traits based on the conversation. Specify the reason also for every field.
 
                 a. User Demographics:
-                1. Age:
                 2. Gender:
                 3. Ethnicity:
                 4. Education:
@@ -220,11 +233,6 @@ def process_call_recording(document, user, expert, persona):
             )
             customer_persona = chat.last.text.replace("*", " ")
 
-            chat.send_message("Identify the topics they are talking about").resolve()
-            logging.info(
-                f"Requested topic identification for call ID: {document['callId']}"
-            )
-            topics = chat.last.text.replace("*", " ")
             return (
                 transcript,
                 summary,

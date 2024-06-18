@@ -4,7 +4,7 @@ from sentiment import get_tonality_sentiment
 from config import callsmeta_collection, calls_collection
 
 
-def process_call_data(call, user, expert, database, usercallId, expertcallId):
+def process_call_data(call, user, expert, database, usercallId, expertcallId, user_calls):
     customer_persona = usercallId.get("Customer Persona", "None")
 
     (
@@ -16,7 +16,7 @@ def process_call_data(call, user, expert, database, usercallId, expertcallId):
         customer_persona,
         user_callback,
         topics,
-    ) = process_call_recording(call, user, expert, customer_persona)
+    ) = process_call_recording(call, user, expert, customer_persona, user_calls)
     
     if not transcript or not customer_persona:
         return False
