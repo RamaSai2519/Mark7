@@ -25,14 +25,15 @@ with calls_collection.watch(pipeline) as stream:
         seconds = sum(
             int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
         )
-        if seconds > 300:
+        if seconds > 120:
             try:
                 user = user_document["name"]
                 expert = expert_document["name"]
                 notify(
                     f"Processing call {str(call["callId"])} between {user} and {expert}"
                 )
-                call_processed = process_call_data(call, user, expert, db, user_document)
+                user_calls = calls_collection.count_documents({"user": call["user"]})
+                call_processed = process_call_data(call, user, expert, db, user_document, user_calls)
                 if not call_processed:
                     continue
                 corrector(call["callId"])

@@ -4,6 +4,7 @@ from score_updater import updater
 from notify import notify
 from config import db
 import logging
+from config import calls_collection
 
 # Configure logging
 logging.basicConfig(
@@ -34,10 +35,11 @@ while True:
                         continue 
                     user = user_document["name"]
                     expert = expert_document["name"]
+                    user_calls = calls_collection.count_documents({"user": call["user"]})
                     notify(
                         f"Processing call {str(call.get('callId'))} between {user} and {expert}"
                     )
-                    call_processed = process_call_data(call, user, expert, db, user_document, expert_document)
+                    call_processed = process_call_data(call, user, expert, db, user_document, expert_document, user_calls)
                     if not call_processed:
                         continue
 
