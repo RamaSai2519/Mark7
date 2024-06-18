@@ -202,9 +202,9 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 2. Gender:
                 3. Ethnicity:
                 4. Education:
-                5. Marital Status Choose one(Single/Widow/Widower/Divorced/Unmarried):
+                5. Marital Status Choose one(Single/Married/Widow/Widower/Divorced/Unmarried):
                 6. Income:
-                7. Living Status Choose one(Alone/With Spouse/With Family):
+                7. Living Status Choose one(Stays alone/Stays with spouse only/Stays with spouse and kids/Stays with kids (no spouse)/Has parents staying with them ):
                 8. Medical History:
                 9. Location/City:
                 10. Comfort with Technology:
