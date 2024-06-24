@@ -7,6 +7,7 @@ from config import (
     calls_collection,
 )
 
+
 def updater():
     calculate_average_scores()
 
@@ -107,14 +108,16 @@ def updater():
         repeat_score = int(repeat_score)
         try:
             experts_collection.update_one(
-                {"_id": ObjectId(expert_id)}, {"$set": {"repeat_score": repeat_score}}
+                {"_id": ObjectId(expert_id)}, {
+                    "$set": {"repeat_score": repeat_score}}
             )
         except Exception as e:
             print(f"Error updating expert's repeat score: {e}")
         score = scores_per_expert.get(expert_id, 0)
         score = int(score)
         calls = calls_per_expert.get(expert_id, 0)
-        normalized_calls = (calls / total_calls) * 100 if total_calls != 0 else 0
+        normalized_calls = (calls / total_calls) * \
+            100 if total_calls != 0 else 0
         normalized_calls = round(normalized_calls, 2)
         try:
             experts_collection.update_one(
@@ -126,7 +129,6 @@ def updater():
         final_score = (score + repeat_score + normalized_calls) / 3
         final_scores[expert_id] = final_score
 
-    
     for expert_id, score in final_scores.items():
         score = int(score)
         calls = calls_per_expert.get(expert_id, 0)
@@ -138,4 +140,3 @@ def updater():
             )
         except Exception as e:
             print(f"Error updating final score of expert: {e}")
-

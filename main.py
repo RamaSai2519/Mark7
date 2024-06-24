@@ -30,15 +30,19 @@ with calls_collection.watch(pipeline) as stream:
                 user = user_document["name"]
                 expert = expert_document["name"]
                 notify(
-                    f"Processing call {str(call["callId"])} between {user} and {expert}"
+                    f"Processing call {str(call["callId"])} between {
+                        user} and {expert}"
                 )
-                user_calls = calls_collection.count_documents({"user": call["user"]})
-                call_processed = process_call_data(call, user, expert, db, user_document, user_calls)
+                user_calls = calls_collection.count_documents(
+                    {"user": call["user"]})
+                call_processed = process_call_data(
+                    call, user, expert, db, user_document, user_calls)
                 if not call_processed:
                     continue
                 corrector(call["callId"])
                 updater()
             except Exception as e:
-                error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)} on main loop"
+                error_message = f"An error occurred processing the call ({call.get('callId')}): {
+                    str(e)} on main loop"
                 notify(error_message)
                 continue

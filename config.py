@@ -28,7 +28,8 @@ schedules_collection = db["schedules"]
 
 
 # Initialize the OpenAI client with the API key
-client = OpenAI(api_key="sk-proj-aKKDe91pGa2k6HMxYksiT3BlbkFJfijdRZELYUustkm8biLd")
+client = OpenAI(
+    api_key="sk-proj-aKKDe91pGa2k6HMxYksiT3BlbkFJfijdRZELYUustkm8biLd")
 
 # Configure the generative AI with the API key
 genai.configure(api_key=os.getenv("GEMNAI_KEY"))

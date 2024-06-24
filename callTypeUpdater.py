@@ -38,7 +38,8 @@ while True:
                     {"_id": call["_id"]}, {"$set": {"type": call_type}}
                 )
                 print(
-                    f"Updated call type for call initiated at {call['initiatedTime']}"
+                    f"Updated call type for call initiated at {
+                        call['initiatedTime']}"
                 )
         else:
             if (schedule_time + timedelta(hours=5, minutes=30)) < datetime.now():
