@@ -26,7 +26,8 @@ def calls_scores_extractor():
                     key = subheading_to_key[subheading]
                     value = int(fraction[1])
                     update_query = {"$set": {key: value}}
-                    callsmeta_collection.update_one({"_id": call["_id"]}, update_query)
+                    callsmeta_collection.update_one(
+                        {"_id": call["_id"]}, update_query)
 
 
 def calculate_average_scores():
@@ -50,21 +51,25 @@ def calculate_average_scores():
             continue
         call = callsmeta_collection.find_one({"callId": call["callId"]})
         if call.get("openingGreeting"):
-            experts_scores[expert_id]["openingGreeting"].append(call["openingGreeting"])
+            experts_scores[expert_id]["openingGreeting"].append(
+                call["openingGreeting"])
         if call.get("tonality"):
             experts_scores[expert_id]["tonality"].append(call["tonality"])
         if call.get("timeSplit"):
             experts_scores[expert_id]["timeSplit"].append(call["timeSplit"])
         if call.get("userSentiment"):
-            experts_scores[expert_id]["userSentiment"].append(call["userSentiment"])
+            experts_scores[expert_id]["userSentiment"].append(
+                call["userSentiment"])
         if call.get("flow"):
             experts_scores[expert_id]["flow"].append(call["flow"])
         if call.get("timeSpent"):
             experts_scores[expert_id]["timeSpent"].append(call["timeSpent"])
         if call.get("probability"):
-            experts_scores[expert_id]["probability"].append(call["probability"])
+            experts_scores[expert_id]["probability"].append(
+                call["probability"])
         if call.get("closingGreeting"):
-            experts_scores[expert_id]["closingGreeting"].append(call["closingGreeting"])
+            experts_scores[expert_id]["closingGreeting"].append(
+                call["closingGreeting"])
     for expert_id, scores in experts_scores.items():
         total_openingGreeting = len(scores["openingGreeting"])
         total_tonality = len(scores["tonality"])
@@ -76,7 +81,8 @@ def calculate_average_scores():
         total_closingGreeting = len(scores["closingGreeting"])
         average_scores = {
             "openingGreeting": (
-                round(sum(scores["openingGreeting"]) / total_openingGreeting, 2)
+                round(sum(scores["openingGreeting"]) /
+                      total_openingGreeting, 2)
                 if total_openingGreeting != 0
                 else 0
             ),
@@ -96,7 +102,8 @@ def calculate_average_scores():
                 else 0
             ),
             "flow": (
-                round(sum(scores["flow"]) / total_flow, 2) if total_flow != 0 else 0
+                round(sum(scores["flow"]) / total_flow,
+                      2) if total_flow != 0 else 0
             ),
             "timeSpent": (
                 round(sum(scores["timeSpent"]) / total_timeSpent, 2)
@@ -109,9 +116,11 @@ def calculate_average_scores():
                 else 0
             ),
             "closingGreeting": (
-                round(sum(scores["closingGreeting"]) / total_closingGreeting, 2)
+                round(sum(scores["closingGreeting"]) /
+                      total_closingGreeting, 2)
                 if total_closingGreeting != 0
                 else 0
             ),
         }
-        experts_collection.update_one({"_id": expert_id}, {"$set": average_scores})
+        experts_collection.update_one(
+            {"_id": expert_id}, {"$set": average_scores})
