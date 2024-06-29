@@ -7,14 +7,14 @@ import os
 import subprocess
 
 
-
 def process_call_recording(document, user, expert, persona, user_calls):
     audio_filename = f"{document['callId']}.mp3"
     logging.info(f"Starting process for call ID: {document['callId']}")
 
     download_audio(document, audio_filename)
     logging.info(
-        f"Downloaded audio for call ID: {document['callId']} to {audio_filename}"
+        f"Downloaded audio for call ID: {
+            document['callId']} to {audio_filename}"
     )
 
     try:
@@ -30,7 +30,8 @@ def process_call_recording(document, user, expert, persona, user_calls):
         ]
 
         # Run the curl command using subprocess
-        result = subprocess.run(curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        result = subprocess.run(
+            curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         # Check for errors
         if result.returncode != 0:
@@ -45,7 +46,8 @@ def process_call_recording(document, user, expert, persona, user_calls):
             ]
 
             # Run jq command using subprocess and pipe the result from curl to jq
-            jq_result = subprocess.run(jq_command, input=result.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            jq_result = subprocess.run(
+                jq_command, input=result.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
             if jq_result.returncode != 0:
                 print(f"Error: {jq_result.stderr}")
@@ -55,10 +57,12 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 print(jq_result.stdout)
                 transcript = jq_result.stdout
 
-        logging.info(f"Transcription completed for call ID: {document['callId']}")
+        logging.info(f"Transcription completed for call ID: {
+                     document['callId']}")
 
     except Exception as e:
-        error_message = f"An error occurred processing the call ({document['callId']}): {str(e)} while transcribing the audio"
+        error_message = f"An error occurred processing the call ({document['callId']}): {
+            str(e)} while transcribing the audio"
         notify(error_message)
         logging.error(error_message)
         return None, None, None, None, None, None, None, None
@@ -84,7 +88,8 @@ def process_call_recording(document, user, expert, persona, user_calls):
         # Add the assistant's response to the conversation history
         message_history.append({"role": "assistant", "content": assistant_response})
         logging.info(
-            f"Sent initial message to chat model for call ID: {document['callId']}"
+            f"Sent initial message to chat model for call ID: {
+                document['callId']}"
         )
         message_history.append({"role": "user", "content": f"{transcript} \nThis is the transcript for the call"})
         logging.info(f"Sent transcript to chat model for call ID: {document['callId']}")
@@ -108,7 +113,8 @@ def process_call_recording(document, user, expert, persona, user_calls):
 
 
         logging.info(
-            f"Requested analysis of inappropriate content for call ID: {document['callId']}"
+            f"Requested analysis of inappropriate content for call ID: {
+                document['callId']}"
         )
         response = client.chat.completions.create(
             model="gpt-4-turbo",
@@ -127,7 +133,8 @@ def process_call_recording(document, user, expert, persona, user_calls):
         if "All good" in summary:
 
             logging.info(
-                f"No inappropriate content found for call ID: {document['callId']}"
+                f"No inappropriate content found for call ID: {
+                    document['callId']}"
             )
             message_history.append({"role": "user", "content": f"Calculate probability of the user calling back only on the basis of the transcript given to you. Give the reason also."})
 
@@ -149,7 +156,8 @@ def process_call_recording(document, user, expert, persona, user_calls):
             message_history.append({"role": "user", "content": f"Summarize the transcript, with the confidence score between 0 to 1"})
 
             logging.info(
-                f"Requested transcript summary for call ID: {document['callId']}"
+                f"Requested transcript summary for call ID: {
+                    document['callId']}"
             )
             response = client.chat.completions.create(
                 model="gpt-4-turbo",
@@ -240,7 +248,8 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 conversation_score = int(conversation_score[0])
                 conversation_score = conversation_score / 20
                 logging.info(
-                    f"Calculated total score: {conversation_score} for call ID: {document['callId']}"
+                    f"Calculated total score: {
+                        conversation_score} for call ID: {document['callId']}"
                 )
             except Exception as e:
                 logging.error(f"Error calculating total score: {str(e)}")
@@ -318,7 +327,8 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 """})
             
             logging.info(
-                f"Requested user persona analysis for call ID: {document['callId']}"
+                f"Requested user persona analysis for call ID: {
+                    document['callId']}"
             )
 
             response = client.chat.completions.create(
@@ -345,13 +355,15 @@ def process_call_recording(document, user, expert, persona, user_calls):
             )
         else:
             logging.warning(
-                f"Inappropriate content found for call ID: {document['callId']}"
+                f"Inappropriate content found for call ID: {
+                    document['callId']}"
             )
             return None, None, None, None, None, None, None, None
 
     except Exception as e:
         notify(f"An error occurred on process_call_recording:{str(e)}")
         logging.error(
-            f"An error occurred during chat processing for call ID: {document['callId']}: {str(e)}"
+            f"An error occurred during chat processing for call ID: {
+                document['callId']}: {str(e)}"
         )
         return None, None, None, None, None, None, None, None

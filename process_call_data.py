@@ -17,10 +17,15 @@ def process_call_data(call, user, expert, database, usercallId, expertcallId, us
         user_callback,
         topics,
     ) = process_call_recording(call, user, expert, customer_persona, user_calls)
-    
+
+    if not conversation_score:
+        calls_collection.update_one(
+            {"callId": call["callId"]},
+            {"$set": {"Conversation Score": 0}},
+        )
+
     if not transcript or not customer_persona:
         return False
-
 
     sentiment = get_tonality_sentiment(transcript)
 
