@@ -14,7 +14,7 @@ pipeline = [
 ]
 
 with calls_collection.watch(pipeline) as stream:
-    print("started...")
+    print("Main loop running")
     for change in stream:
         call = change["fullDocument"]
         user_document = users_collection.find_one({"_id": call["user"]})
