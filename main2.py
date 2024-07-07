@@ -17,7 +17,6 @@ while True:
     successful_calls = list(db.calls.find({"status": "successfull"}))
 
     for call in successful_calls:
-        print("Backup loop running")
         duration = call.get("duration", "00:00:00")
         seconds = sum(
             int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
@@ -27,6 +26,7 @@ while True:
                 "None",
                 "",
             ]:
+                print("Backup loop running")
                 try:
                     user_document = db.users.find_one(
                         {"_id": call.get("user", "")})
