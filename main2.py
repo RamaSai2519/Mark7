@@ -26,7 +26,6 @@ while True:
                 "None",
                 "",
             ]:
-                print("Backup loop running")
                 try:
                     user_document = db.users.find_one(
                         {"_id": call.get("user", "")})
