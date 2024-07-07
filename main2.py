@@ -14,10 +14,10 @@ logging.basicConfig(
 )
 
 while True:
-    print("Backup loop running")
     successful_calls = list(db.calls.find({"status": "successfull"}))
 
     for call in successful_calls:
+        print("Backup loop running")
         duration = call.get("duration", "00:00:00")
         seconds = sum(
             int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
