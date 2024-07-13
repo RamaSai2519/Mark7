@@ -12,7 +12,7 @@ def calls_scores_extractor(callId):
         "User Sentiment": "userSentiment",
         "Flow of Conversation": "flow",
         "Time Spent on Call": "timeSpent",
-        "Probability of Calling Back": "probability",
+        "Probability of the User Calling Back": "probability",
         "Closing Greeting": "closingGreeting",
     }
     for call in calls:

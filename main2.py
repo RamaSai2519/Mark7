@@ -2,6 +2,7 @@ from process_call_data import process_call_data
 from score_updater import updater
 from notify import notify
 from config import db
+from datetime import datetime
 import logging
 from config import calls_collection
 
@@ -13,7 +14,10 @@ logging.basicConfig(
 )
 
 while True:
-    successful_calls = list(db.calls.find({"status": "successfull"}))
+    successful_calls = list(calls_collection.find(
+        {"status": "successfull", "inititatedTime": {"$gte": datetime.strptime(
+            "2024-06-15T00:00:00.000Z, '%Y-%m-%dT%H:%M:%S.%fZ'")}}
+    ))
 
     for call in successful_calls:
         duration = call.get("duration", "00:00:00")
@@ -44,7 +48,9 @@ while True:
                     call_processed = process_call_data(
                         call, user, expert, db, user_document, expert_document, user_calls)
                     if not call_processed:
-                        continue
+                        print("Call not processed")
+                    else:
+                        print("Call processed")
                     updater(call["expert"], call["callId"])
                 except Exception as e:
                     error_message = f"An error occurred processing the call ({call.get('callId')}): {
