@@ -1,4 +1,4 @@
-from config import model, DEEPGRAM_API_KEY, open_ai_client as client
+from config import DEEPGRAM_API_KEY, open_ai_client as client
 from download_audio import download_audio
 from notify import notify
 import logging
@@ -13,8 +13,7 @@ def process_call_recording(document, user, expert, persona, user_calls):
 
     download_audio(document, audio_filename)
     logging.info(
-        f"Downloaded audio for call ID: {
-            document['callId']} to {audio_filename}"
+        f"Downloaded audio for call ID: {document['callId']} to {audio_filename}"
     )
 
     try:
@@ -57,12 +56,10 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 print(jq_result.stdout)
                 transcript = jq_result.stdout
 
-        logging.info(f"Transcription completed for call ID: {
-                     document['callId']}")
+        logging.info(f"Transcription completed for call ID: {document['callId']}")
 
     except Exception as e:
-        error_message = f"An error occurred processing the call ({document['callId']}): {
-            str(e)} while transcribing the audio"
+        error_message = f"An error occurred processing the call ({document['callId']}): {str(e)} while transcribing the audio"
         notify(error_message)
         logging.error(error_message)
         return None, None, None, None, None, None, None, None
@@ -88,8 +85,7 @@ def process_call_recording(document, user, expert, persona, user_calls):
         # Add the assistant's response to the conversation history
         message_history.append({"role": "assistant", "content": assistant_response})
         logging.info(
-            f"Sent initial message to chat model for call ID: {
-                document['callId']}"
+            f"Sent initial message to chat model for call ID: {document['callId']}"
         )
         message_history.append({"role": "user", "content": f"{transcript} \nThis is the transcript for the call"})
         logging.info(f"Sent transcript to chat model for call ID: {document['callId']}")
@@ -113,8 +109,7 @@ def process_call_recording(document, user, expert, persona, user_calls):
 
 
         logging.info(
-            f"Requested analysis of inappropriate content for call ID: {
-                document['callId']}"
+            f"Requested analysis of inappropriate content for call ID: {document['callId']}"
         )
         response = client.chat.completions.create(
             model="gpt-4-turbo",
@@ -133,8 +128,7 @@ def process_call_recording(document, user, expert, persona, user_calls):
         if "All good" in summary:
 
             logging.info(
-                f"No inappropriate content found for call ID: {
-                    document['callId']}"
+                f"No inappropriate content found for call ID: {document['callId']}"
             )
             message_history.append({"role": "user", "content": f"Calculate probability of the user calling back only on the basis of the transcript given to you. Give the reason also."})
 
@@ -153,11 +147,10 @@ def process_call_recording(document, user, expert, persona, user_calls):
             # Add the assistant's response to the conversation history
             message_history.append({"role": "assistant", "content": user_callback})
 
-            message_history.append({"role": "user", "content": f"Summarize the transcript, with the confidence score between 0 to 1"})
+            message_history.append({"role": "user", "content": f"Summarize the transcript, with the confidence score between 0 to 1."})
 
             logging.info(
-                f"Requested transcript summary for call ID: {
-                    document['callId']}"
+                f"Requested transcript summary for call ID: {document['callId']}"
             )
             response = client.chat.completions.create(
                 model="gpt-4-turbo",
@@ -202,13 +195,13 @@ def process_call_recording(document, user, expert, persona, user_calls):
 
             message_history.append({"role": "user", "content": f"""
                 Please analyze the call transcript based on the given parameters.
-                Opening Greeting(_/5)- Evaluate if the guidelines are followed.
-                Time split between Saarthi and User(_/15) - Evaluate if the User spent higher time talking or not.
+                Opening Greeting(_/10)- Evaluate if the guidelines are followed.
+                Time split between Saarthi and User(_/15) - Evaluate if the guidelines are followed.
                 User Sentiment(_/20) - Evaluate the sentiment of the user based on the transcript.
-                Flow Of Conversation(_/10) - Evaluate if the guidelines are followed.
-                Time Spent on Call(_/15) - Higher the time, Higher the score. Use the transcript provided initially for this.
-                Probability of the User Calling Back(_/20) - The User should explicitly state that they would call back for a higher score. Also mention the instance if the user explicitly states that they would call back.
-                Closing Greeting(_/5) - Evaluate if the guidelines are followed.
+                Flow Of Conversation(_/15) - Evaluate if the guidelines are followed.
+                Time Spent on Call(_/10) - If time spent is more than 15 minutes, its good. Use the transcript provided initially for this.
+                Probability of the User Calling Back(_/20) - The User should explicitly state that they would call back or the user and sarathi should mutually decide for a future date for the call for a higher score. Also mention the instance.
+                Closing Greeting(_/10) - Evaluate if the guidelines are followed.
 
                 Find the section relating to the parameters in the guidelines before you give a score. Higher score if the guidelines are followed.
                 with the confidence score between 0 to 1,
@@ -248,8 +241,7 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 conversation_score = int(conversation_score[0])
                 conversation_score = conversation_score / 20
                 logging.info(
-                    f"Calculated total score: {
-                        conversation_score} for call ID: {document['callId']}"
+                    f"Calculated total score: {conversation_score} for call ID: {document['callId']}"
                 )
             except Exception as e:
                 logging.error(f"Error calculating total score: {str(e)}")
@@ -297,22 +289,21 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 Context: Generate a user persona from the transcript provided above. Remember which speaker was the user and use only that speaker lines from the transcript to generate this persona. The persona should encompass demographics, psychographics, and personality traits based on the conversation. Specify the reason also for every field. Update the persona provided above , update only the field which you are sure about.
 
                 a. User Demographics:
-                2. Gender:
-                3. Ethnicity:
-                4. Education:
-                5. Marital Status Choose one(Single/Married/Widow/Widower/Divorced/Unmarried):
-                6. Income:
-                7. Living Status Choose one(Stays alone/Stays with spouse only/Stays with spouse and kids/Stays with kids (no spouse)/Has parents staying with them ):
-                8. Medical History:
-                9. Location/City:
-                10. Comfort with Technology:
-                11. Standard of Living:
-                12. Financial Status:
-                13. Family Members:
-                14. Work Status Choose One(Retired/Active Working/Part-Time/Projects)
-                15. Last Company Worked For:
-                16. Language Preference:
-                17. Physical State Of Being: 
+                1. Gender:
+                2. Ethnicity:
+                3. Education:
+                4. Marital Status Choose one(Single/Married/Widow/Widower/Divorced/Unmarried):
+                5. Income:
+                6. Living Status Choose one(Stays alone/Stays with spouse only/Stays with spouse and kids/Stays with kids (no spouse)/Has parents staying with them ):
+                7. Medical History:
+                8. Location/City:
+                9. Comfort with Technology:
+                10. Standard of Living:
+                11. Family Members:
+                12. Work Status Choose One(Retired/Active Working/Part-Time/Projects)
+                13. Last Company Worked For:
+                14. Language Preference:
+                15. Physical State Of Being: 
 
                 b. User Psychographics:
                 1. Needs:
@@ -327,8 +318,7 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 """})
             
             logging.info(
-                f"Requested user persona analysis for call ID: {
-                    document['callId']}"
+                f"Requested user persona analysis for call ID: {document['callId']}"
             )
 
             response = client.chat.completions.create(
@@ -355,15 +345,13 @@ def process_call_recording(document, user, expert, persona, user_calls):
             )
         else:
             logging.warning(
-                f"Inappropriate content found for call ID: {
-                    document['callId']}"
+                f"Inappropriate content found for call ID: {document['callId']}"
             )
             return None, None, None, None, None, None, None, None
 
     except Exception as e:
         notify(f"An error occurred on process_call_recording:{str(e)}")
         logging.error(
-            f"An error occurred during chat processing for call ID: {
-                document['callId']}: {str(e)}"
+            f"An error occurred during chat processing for call ID: {document['callId']}: {str(e)}"
         )
         return None, None, None, None, None, None, None, None

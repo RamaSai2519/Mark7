@@ -3,8 +3,8 @@ from bson import ObjectId
 import re
 
 
-def calls_scores_extractor():
-    calls = callsmeta_collection.find()
+def calls_scores_extractor(callId):
+    calls = callsmeta_collection.find({"callId": callId})
     subheading_to_key = {
         "Opening Greeting": "openingGreeting",
         "Tonality": "tonality",
@@ -12,7 +12,7 @@ def calls_scores_extractor():
         "User Sentiment": "userSentiment",
         "Flow of Conversation": "flow",
         "Time Spent on Call": "timeSpent",
-        "Probability of Calling Back": "probability",
+        "Probability of the User Calling Back": "probability",
         "Closing Greeting": "closingGreeting",
     }
     for call in calls:
@@ -30,10 +30,12 @@ def calls_scores_extractor():
                         {"_id": call["_id"]}, update_query)
 
 
-def calculate_average_scores():
-    calls_scores_extractor()
+def calculate_average_scores(expert, callId):
+    calls_scores_extractor(callId)
     experts_scores = {}
-    for call in calls_collection.find():
+    for call in calls_collection.find(
+        {"expert": ObjectId(expert)}
+    ):
         expert_id = call["expert"]
         expert_id = ObjectId(expert_id)
         if expert_id not in experts_scores:

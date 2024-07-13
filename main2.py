@@ -1,10 +1,11 @@
 from process_call_data import process_call_data
-from Score_corrector import corrector
 from score_updater import updater
 from notify import notify
 from config import db
+from datetime import datetime
 import logging
 from config import calls_collection
+from pprint import pprint
 
 # Configure logging
 logging.basicConfig(
@@ -13,16 +14,19 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
-while True:
-    successful_calls = list(db.calls.find({"status": "successfull"}))
+datethen = datetime(2024, 6, 15, 0, 0, 0)
 
+while True:
+    successful_calls = list(calls_collection.find(
+        {"status": "successfull", "initiatedTime": {"$gte": datethen}}
+    ).sort("initiatedTime", 1))
     for call in successful_calls:
         duration = call.get("duration", "00:00:00")
         seconds = sum(
             int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
         )
         if seconds > 120:
-            if "Conversation Score" not in call and call.get("recording_url") not in [
+            if call.get("recording_url") not in [
                 "None",
                 "",
             ]:
@@ -39,18 +43,16 @@ while True:
                     user_calls = calls_collection.count_documents(
                         {"user": call["user"]})
                     notify(
-                        f"Processing call {str(call.get('callId'))} between {
-                            user} and {expert}"
+                        f"Processing call {str(call.get('callId'))} between {user} and {expert}"
                     )
                     call_processed = process_call_data(
                         call, user, expert, db, user_document, expert_document, user_calls)
                     if not call_processed:
-                        continue
-
-                    corrector(call["callId"])
-                    updater()
+                        print("Call not processed")
+                    else:
+                        print("Call processed")
+                    updater(call["expert"], call["callId"])
                 except Exception as e:
-                    error_message = f"An error occurred processing the call ({call.get('callId')}): {
-                        str(e)} on backup loop"
+                    error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)} on backup loop"
                     notify(error_message)
                     continue

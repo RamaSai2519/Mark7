@@ -1,7 +1,6 @@
 from process_call_data import process_call_data
 from score_updater import updater
 from notify import notify
-from Score_corrector import corrector
 from config import calls_collection, users_collection, experts_collection, db
 
 pipeline = [
@@ -39,8 +38,7 @@ with calls_collection.watch(pipeline) as stream:
                     call, user, expert, db, user_document, user_calls)
                 if not call_processed:
                     continue
-                corrector(call["callId"])
-                updater()
+                updater(call["expert"], call["callId"])
             except Exception as e:
                 error_message = f"An error occurred processing the call ({call.get('callId')}): {
                     str(e)} on main loop"
