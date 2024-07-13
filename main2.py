@@ -5,6 +5,7 @@ from config import db
 from datetime import datetime
 import logging
 from config import calls_collection
+from pprint import pprint
 
 # Configure logging
 logging.basicConfig(
@@ -13,19 +14,19 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
+datethen = datetime(2024, 6, 15, 0, 0, 0)
+
 while True:
     successful_calls = list(calls_collection.find(
-        {"status": "successfull", "inititatedTime": {"$gte": datetime.strptime(
-            "2024-06-15T00:00:00.000Z, '%Y-%m-%dT%H:%M:%S.%fZ'")}}
-    ))
-
+        {"status": "successfull", "initiatedTime": {"$gte": datethen}}
+    ).limit(5))
     for call in successful_calls:
         duration = call.get("duration", "00:00:00")
         seconds = sum(
             int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
         )
         if seconds > 120:
-            if "Conversation Score" not in call and call.get("recording_url") not in [
+            if call.get("recording_url") not in [
                 "None",
                 "",
             ]:
