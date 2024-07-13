@@ -19,7 +19,7 @@ datethen = datetime(2024, 6, 15, 0, 0, 0)
 while True:
     successful_calls = list(calls_collection.find(
         {"status": "successfull", "initiatedTime": {"$gte": datethen}}
-    ).limit(5))
+    ).sort("initiatedTime", 1))
     for call in successful_calls:
         duration = call.get("duration", "00:00:00")
         seconds = sum(
@@ -43,8 +43,7 @@ while True:
                     user_calls = calls_collection.count_documents(
                         {"user": call["user"]})
                     notify(
-                        f"Processing call {str(call.get('callId'))} between {
-                            user} and {expert}"
+                        f"Processing call {str(call.get('callId'))} between {user} and {expert}"
                     )
                     call_processed = process_call_data(
                         call, user, expert, db, user_document, expert_document, user_calls)
@@ -54,7 +53,6 @@ while True:
                         print("Call processed")
                     updater(call["expert"], call["callId"])
                 except Exception as e:
-                    error_message = f"An error occurred processing the call ({call.get('callId')}): {
-                        str(e)} on backup loop"
+                    error_message = f"An error occurred processing the call ({call.get('callId')}): {str(e)} on backup loop"
                     notify(error_message)
                     continue
