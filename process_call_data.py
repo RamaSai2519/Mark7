@@ -1,7 +1,9 @@
 from process_call_recording import process_call_recording
 from upload_transcript import upload_transcript
 from sentiment import get_tonality_sentiment
-from config import callsmeta_collection, calls_collection
+from config import callsmeta_collection, calls_collection, users_collection
+from datetime import datetime
+import pytz
 
 
 def process_call_data(call, user, expert, database, usercallId, expertcallId, user_calls):
@@ -33,7 +35,7 @@ def process_call_data(call, user, expert, database, usercallId, expertcallId, us
 
     update_query = {"_id": usercallId["_id"]}
     update_values = {"$set": {"Customer Persona": customer_persona}}
-    database.users.update_one(update_query, update_values)
+    users_collection.update_one(update_query, update_values)
 
     update_values = {
         "callId": call["callId"],
@@ -47,8 +49,19 @@ def process_call_data(call, user, expert, database, usercallId, expertcallId, us
         "Topics": topics,
         "Summary": summary,
         "transcript_url": transcript_url,
+        "updatedAt": datetime.now(pytz.utc),
     }
-    callsmeta_collection.insert_one(update_values)
+
+    if callsmeta_collection.find_one({"callId": call["callId"]}):
+        callsmeta_collection.update_one(
+            {"callId": call["callId"]},
+            {"$set": update_values},
+        )
+    else:
+        update_values["createdAt"] = datetime.now(pytz.utc)
+        callsmeta_collection.insert_one(
+            update_values,
+        )
 
     calls_collection.update_one(
         {"callId": call["callId"]},

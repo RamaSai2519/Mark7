@@ -3,26 +3,24 @@ from bson.objectid import ObjectId
 from config import (
     callsmeta_collection,
     experts_collection,
-    users_collection,
     calls_collection,
 )
 
 
-def updater():
-    calculate_average_scores()
+def updater(expert, callId):
+    calculate_average_scores(expert, callId)
 
     conversation_scores = {}
-    for call in calls_collection.find():
-        expert_id = str(call.get("expert"))
-        if "Conversation Score" not in call:
-            continue
+    for call in calls_collection.find(
+        {"expert": ObjectId(expert), "Conversation Score": {"$exists": True}}
+    ):
+        expert_id = str(expert)
         score = call.get("Conversation Score", 0.0)
         score = float(score)
         if score > 0.0:
             conversation_scores.setdefault(expert_id, []).append(score)
 
     average_conversation_scores = {}
-    
     for expert_id, scores in conversation_scores.items():
         average_score = sum(scores) / len(scores) if scores else 0
         average_conversation_scores[expert_id] = average_score
@@ -34,24 +32,12 @@ def updater():
     total_users_per_expert = {}
     user_calls_to_experts = {}
 
-    calls = callsmeta_collection.find()
-
-    expert_names = {}
-    for expert in experts_collection.find():
-        expert_names[str(expert.get("_id"))] = expert.get("name")
-
-    user_names = {}
-    for user in users_collection.find():
-        user_names[str(user.get("_id"))] = user.get("name")
-
-    results_per_expert = []
+    calls = callsmeta_collection.find({"expert": ObjectId(expert)})
 
     for call in calls:
-        expert_id = str(call.get("expert"))
-        user_id = str(call.get("user"))
-
+        expert_id = str(call["expert"])
+        user_id = str(call["user"])
         total_users_per_expert.setdefault(expert_id, set()).add(user_id)
-
         user_calls_to_experts.setdefault(user_id, set()).add(expert_id)
 
     repeat_ratio_per_expert = {}
@@ -68,36 +54,32 @@ def updater():
         )
 
     for expert_id, repeat_ratio in repeat_ratio_per_expert.items():
-        expert_name = expert_names.get(expert_id, "Unknown Expert")
         total_users = total_users_per_expert.get(expert_id, [])
         repeat_users = []
         for user_id in total_users:
             if len(
                 user_calls_to_experts.get(user_id, [])
             ) > 1 and expert_id in user_calls_to_experts.get(user_id, []):
-                repeat_users.append(user_names.get(user_id, "Unknown User"))
+                repeat_users.append(user_id)
 
     for expert_id, repeat_ratio in repeat_ratio_per_expert.items():
-        expert_name = expert_names.get(expert_id, "Unknown Expert")
         total_users = total_users_per_expert.get(expert_id, [])
         repeat_users = []
         for user_id in total_users:
             if len(
                 user_calls_to_experts.get(user_id, [])
             ) > 1 and expert_id in user_calls_to_experts.get(user_id, []):
-                repeat_users.append(user_names.get(user_id, "Unknown User"))
+                repeat_users.append(user_id)
         repeat_ratio = int(repeat_ratio)
-        result_sentence = f"{expert_id},{expert_name}: {repeat_ratio:.0f}%"
-        results_per_expert.append(result_sentence)
 
     scores_per_expert = {}
-    for expert in experts_collection.find():
+    for expert in experts_collection.find({"_id": expert}):
         expert_id = str(expert.get("_id"))
         score = expert.get("score", 0) * 20
         scores_per_expert[expert_id] = score
 
     calls_per_expert = {}
-    for call in callsmeta_collection.find():
+    for call in callsmeta_collection.find({"expert": expert}):
         expert_id = str(call.get("expert"))
         calls_per_expert[expert_id] = calls_per_expert.get(expert_id, 0) + 1
 
@@ -133,8 +115,6 @@ def updater():
     for expert_id, score in final_scores.items():
         score = int(score)
         calls = calls_per_expert.get(expert_id, 0)
-        expert_name = expert_names.get(expert_id, "Unknown Expert")
-
         try:
             experts_collection.update_one(
                 {"_id": ObjectId(expert_id)}, {"$set": {"total_score": score}}

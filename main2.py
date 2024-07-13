@@ -1,5 +1,4 @@
 from process_call_data import process_call_data
-from Score_corrector import corrector
 from score_updater import updater
 from notify import notify
 from config import db
@@ -46,9 +45,7 @@ while True:
                         call, user, expert, db, user_document, expert_document, user_calls)
                     if not call_processed:
                         continue
-
-                    corrector(call["callId"])
-                    updater()
+                    updater(call["expert"], call["callId"])
                 except Exception as e:
                     error_message = f"An error occurred processing the call ({call.get('callId')}): {
                         str(e)} on backup loop"
