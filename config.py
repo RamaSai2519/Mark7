@@ -1,4 +1,3 @@
-import google.generativeai as genai
 import logging
 import os
 from pymongo import MongoClient
@@ -31,10 +30,10 @@ schedules_collection = db["schedules"]
 # client = OpenAI(api_key="sk-proj-aKKDe91pGa2k6HMxYksiT3BlbkFJfijdRZELYUustkm8biLd")
 
 # Configure the generative AI with the API key
-genai.configure(api_key=os.getenv("GEMNAI_KEY"))
+# genai.configure(api_key=os.getenv("GEMNAI_KEY"))
 
-# Initialize the generative model
-model = genai.GenerativeModel("gemini-pro")
+# # Initialize the generative model
+# model = genai.GenerativeModel("gemini-pro")
 
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
 
