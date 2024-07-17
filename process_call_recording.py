@@ -31,6 +31,9 @@ def process_call_recording(document, user, expert, persona, user_calls):
         # Run the curl command using subprocess
         result = subprocess.run(
             curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        os.remove(audio_filename)
+        logging.info(f"Removed audio file {audio_filename}")
 
         # Check for errors
         if result.returncode != 0:
@@ -59,13 +62,12 @@ def process_call_recording(document, user, expert, persona, user_calls):
         logging.info(f"Transcription completed for call ID: {document['callId']}")
 
     except Exception as e:
+        os.remove(audio_filename)
+        logging.info(f"Removed audio file {audio_filename}")
         error_message = f"An error occurred processing the call ({document['callId']}): {str(e)} while transcribing the audio"
         notify(error_message)
         logging.error(error_message)
         return None, None, None, None, None, None, None, None
-
-    os.remove(audio_filename)
-    logging.info(f"Removed audio file {audio_filename}")
 
     system_message = {"role": "system", "content": "You are a helpful assistant."}
     message_history = [system_message]
