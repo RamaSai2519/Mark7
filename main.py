@@ -30,7 +30,7 @@ with calls_collection.watch(pipeline) as stream:
                 expert = expert_document["name"]
                 notify(
                     f"Processing call {str(call["callId"])} between {
-                        user} and {expert}"
+                        user} and {expert} on main loop"
                 )
                 user_calls = calls_collection.count_documents(
                     {"user": call["user"]})

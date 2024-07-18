@@ -38,7 +38,7 @@ while True:
                         {"user": call["user"]})
                     notify(
                         f"Processing call {str(call.get('callId'))} between {
-                            user} and {expert}"
+                            user} and {expert} on backup loop"
                     )
                     call_processed = process_call_data(
                         call, user, expert, db, user_document, expert_document, user_calls)
