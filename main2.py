@@ -20,7 +20,7 @@ while True:
             int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
         )
         if seconds > 120:
-            if call.get("recording_url") not in [
+            if "Conversation Score" not in call and call.get("recording_url") not in [
                 "None",
                 "",
             ]:
