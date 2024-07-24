@@ -1,6 +1,5 @@
 from process_call_recording import process_call_recording
 from upload_transcript import upload_transcript
-from sentiment import get_tonality_sentiment
 from config import callsmeta_collection, calls_collection, users_collection
 from datetime import datetime
 import pytz
@@ -23,8 +22,6 @@ def process_call_data(call, user, expert, database, usercallId, expertcallId, us
     if not transcript or not customer_persona:
         return False
 
-    sentiment = get_tonality_sentiment(transcript)
-
     transcript_url = upload_transcript(transcript, call["callId"])
 
     update_query = {"_id": usercallId["_id"]}
@@ -37,7 +34,6 @@ def process_call_data(call, user, expert, database, usercallId, expertcallId, us
         "expert": str(expertcallId["_id"]),
         "Conversation Score": conversation_score,
         "Score Breakup": conversation_score_details,
-        "Sentiment": sentiment,
         "Saarthi Feedback": saarthi_feedback,
         "User Callback": user_callback,
         "Topics": topics,
