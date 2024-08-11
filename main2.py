@@ -11,20 +11,19 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
+print("Backup loop started")
 while True:
     successful_calls = list(calls_collection.find({"status": "successfull"}))
     if successful_calls:
-        print("Backup loop running")
         for call in successful_calls:
             duration = call.get("duration", "00:00:00")
             seconds = sum(
                 int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
             )
             if seconds > 120:
-                if "Conversation Score" not in call and call.get("recording_url") not in [
-                    "None",
-                    "",
-                ]:
+                conScore = call["Conversation Score"] if "Conversation Score" in call else None
+                if conScore is None and call.get("recording_url") not in ["None", ""]:
+                    print(f"Processing call {str(call["callId"])}")
                     try:
                         user_document = db.users.find_one(
                             {"_id": call.get("user", "")})
