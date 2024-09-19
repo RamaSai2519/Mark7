@@ -1,23 +1,24 @@
 from config import DEEPGRAM_API_KEY, open_ai_client as client
 from download_audio import download_audio
+from json_extractor import extract_json
 from notify import notify
+import subprocess
 import logging
 import re
 import os
-import subprocess
 
 
 def process_call_recording(document, user, expert, persona, user_calls):
     audio_filename = f"{document['callId']}.mp3"
-    logging.info(f"Starting process for call ID: {document['callId']}")
+    print(f"Starting process for call ID: {document['callId']}")
 
     download_audio(document, audio_filename)
-    logging.info(
+    print(
         f"Downloaded audio for call ID: {document['callId']} to {audio_filename}"
     )
 
     try:
-        logging.info("Initialized Deepgram client")
+        print("Initialized Deepgram client")
 
         curl_command = [
             'curl',
@@ -56,22 +57,22 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 print(jq_result.stdout)
                 transcript = jq_result.stdout
 
-        logging.info(f"Transcription completed for call ID: {document['callId']}")
+        print(f"Transcription completed for call ID: {document['callId']}")
 
     except Exception as e:
         os.remove(audio_filename)
-        logging.info(f"Removed audio file {audio_filename}")
+        print(f"Removed audio file {audio_filename}")
         error_message = f"An error occurred processing the call ({document['callId']}): {str(e)} while transcribing the audio"
         notify(error_message)
         logging.error(error_message)
         return None, None, None, None, None, None, None, None
     
     os.remove(audio_filename)
-    logging.info(f"Removed audio file {audio_filename}")
+    print(f"Removed audio file {audio_filename}")
 
     system_message = {"role": "system", "content": "You are a helpful assistant."}
     message_history = [system_message]
-    logging.info(f"Started chat session for call ID: {document['callId']}")
+    print(f"Started chat session for call ID: {document['callId']}")
 
     try:
         message_history.append({"role": "user", "content": f"I'll give you a call transcript between the user {user} and the sarathi {expert}. You have to correctly identify which Speaker is the User and which Speaker is the Sarathi (Generally Sarathi will be the one who ask the User questions about their routine and how they are doing. Also you can identify which speaker is Sarathi by their name). The user and sarathi connected via a website called 'Sukoon.Love', a platform for people to have conversations and seek guidance from Sarathis. Analyze the transcript and answer the questions I ask accordingly."})
@@ -86,11 +87,11 @@ def process_call_recording(document, user, expert, persona, user_calls):
 
         # Add the assistant's response to the conversation history
         message_history.append({"role": "assistant", "content": assistant_response})
-        logging.info(
+        print(
             f"Sent initial message to chat model for call ID: {document['callId']}"
         )
         message_history.append({"role": "user", "content": f"{transcript} \nThis is the transcript for the call"})
-        logging.info(f"Sent transcript to chat model for call ID: {document['callId']}")
+        print(f"Sent transcript to chat model for call ID: {document['callId']}")
 
         response = client.chat.completions.create(
             model="gpt-4-turbo",
@@ -110,7 +111,7 @@ def process_call_recording(document, user, expert, persona, user_calls):
             """})
 
 
-        logging.info(
+        print(
             f"Requested analysis of inappropriate content for call ID: {document['callId']}"
         )
         response = client.chat.completions.create(
@@ -129,12 +130,12 @@ def process_call_recording(document, user, expert, persona, user_calls):
 
         if "All good" in summary:
 
-            logging.info(
+            print(
                 f"No inappropriate content found for call ID: {document['callId']}"
             )
             message_history.append({"role": "user", "content": f"Calculate probability of the user calling back only on the basis of the transcript given to you. Give the reason also."})
 
-            logging.info(
+            print(
                 f"Requested probability of callback for call ID: {document['callId']}"
             )
             response = client.chat.completions.create(
@@ -151,7 +152,7 @@ def process_call_recording(document, user, expert, persona, user_calls):
 
             message_history.append({"role": "user", "content": f"Summarize the transcript, with the confidence score between 0 to 1."})
 
-            logging.info(
+            print(
                 f"Requested transcript summary for call ID: {document['callId']}"
             )
             response = client.chat.completions.create(
@@ -168,7 +169,7 @@ def process_call_recording(document, user, expert, persona, user_calls):
 
             message_history.append({"role": "user", "content": f"Give me feedback for the sarathi."})
 
-            logging.info(
+            print(
                 f"Requested saarthi feedback for call ID: {document['callId']}"
             )
             response = client.chat.completions.create(
@@ -191,11 +192,11 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 with open("guidelines2.txt", "r", encoding="utf-8") as file:
                     guidelines = file.read()
 
-            logging.info("Read guidelines from guidelines.txt")
+            print("Read guidelines from guidelines.txt")
 
             message_history.append({"role": "user", "content": f"This is the guidelines {guidelines}. Remember this"})
 
-            message_history.append({"role": "user", "content": f"""
+            message_history.append({"role": "user", "content": """
                 Please analyze the call transcript based on the given parameters.
                 Opening Greeting(_/10)- Evaluate if the guidelines are followed.
                 Time split between Saarthi and User(_/15) - Evaluate if the guidelines are followed.
@@ -204,27 +205,28 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 Time Spent on Call(_/10) - If time spent is more than 15 minutes, its good. Use the transcript provided initially for this.
                 Probability of the User Calling Back(_/20) - The User should explicitly state that they would call back or the user and sarathi should mutually decide for a future date for the call for a higher score. Also mention the instance.
                 Closing Greeting(_/10) - Evaluate if the guidelines are followed.
-
-                Find the section relating to the parameters in the guidelines before you give a score. Higher score if the guidelines are followed.
-                with the confidence score between 0 to 1,
-                 Please be strict in analysing and give correct data only
+                
+                Find the section relating to the parameters in the guidelines before you give a score. Higher score if the guidelines are followed. With the confidence score between 0 to 1.
+                Give me the output in a json format like this and don't add 
+                {"openingGreeting": 0,"timeSplit": 0,"userSentiment": 0,"flow": 0,"timeSpent": 0,"probability": 0,"closingGreeting": 0, "explanation": ""}
                 """})
 
             response = client.chat.completions.create(
                 model="gpt-4-turbo",
                 messages=message_history
             )
-            conversation_score_details = response.choices[0].message.content
-
+            score_details = response.choices[0].message.content
             # Print the assistant's response
-            print(f"Assistant: {conversation_score_details}")
+            print(f"Assistant: {score_details}")
+            conversation_score_details = extract_json(score_details)
+
 
             # Add the assistant's response to the conversation history
-            message_history.append({"role": "assistant", "content": conversation_score_details})\
+            message_history.append({"role": "assistant", "content": score_details})
             
             message_history.append({"role": "user", "content": f"Give me a total score out of 100. Only return the score in response."})
 
-            logging.info(f"Requested total score for call ID: {document['callId']}")
+            print(f"Requested total score for call ID: {document['callId']}")
 
             response = client.chat.completions.create(
                 model="gpt-4-turbo",
@@ -242,7 +244,7 @@ def process_call_recording(document, user, expert, persona, user_calls):
             try:
                 conversation_score = int(conversation_score[0])
                 conversation_score = conversation_score / 20
-                logging.info(
+                print(
                     f"Calculated total score: {conversation_score} for call ID: {document['callId']}"
                 )
             except Exception as e:
@@ -252,9 +254,16 @@ def process_call_recording(document, user, expert, persona, user_calls):
 
             with open("topics.txt", "r", encoding="utf-8") as file:
                 topics = file.read()
-            message_history.append({"role": "user", "content": f"Identify the topics they are talking about from the {topics}"})
+            message_history.append({"role": "user", "content": f"""
+            Identify the topics they are talking about from the {topics}.
+            Give me the output in a json format like this:
+            {{
+                "topic": ""
+                "sub_topic": ""
+            }}
+            """})
 
-            logging.info(
+            print(
                     f"Requested topic identification for call ID: {document['callId']}"
                 )
 
@@ -262,13 +271,15 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 model="gpt-4-turbo",
                 messages=message_history
             )
-            topics = response.choices[0].message.content
+            topics_response = response.choices[0].message.content
+            topics = extract_json(topics_response)
 
             # Print the assistant's response
-            print(f"Assistant: {topics}")
+            print(f"Assistant: {topics_response}")
 
             # Add the assistant's response to the conversation history
-            message_history.append({"role": "assistant", "content": topics})
+            message_history.append(
+                {"role": "assistant", "content": topics_response})
 
             if persona != "None":
                 message_history.append({"role": "user", "content": f"""
@@ -278,12 +289,12 @@ def process_call_recording(document, user, expert, persona, user_calls):
                     Remember this and answer the next question accordingly.
                     with the confidence score between 0 to 1
                     """})
-                logging.info(
+                print(
                     f"Sent user persona to chat model for call ID: {document['callId']}"
                 )
 
             else:
-                logging.info(
+                print(
                     f"No previous user persona provided for call ID: {document['callId']}"
                 )
 
@@ -313,13 +324,38 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 3. Pain Points/ Challenges:
                 4. Motivators:
 
-                c. User Personality:
-                Choose one(Sanguine/Choleric/Melancholic/Phlegmatic)
+                c. User Personality: Choose one(Sanguine/Choleric/Melancholic/Phlegmatic)
                 with the confidence score between 0 to 1,
-                 Please be strict in analysing and give correct data only
+                Please be strict in analysing and give correct data only
+
+                Give me the output in a json format like this:
+                {demographics: {
+                        gender: "",
+                        ethnicity: "",
+                        education: "",
+                        maritalStatus: "",
+                        income: "",
+                        livingStatus: "",
+                        medicalHistory: "",
+                        location: "",
+                        techComfort: "",
+                        standardOfLiving: "",
+                        familyMembers: "",
+                        workStatus: "",
+                        lastCompany: "",
+                        languagePreference: "",
+                        physicalState: ""
+                    },
+                    psychographics: {
+                        needs: "",
+                        values: "",
+                        painPoints: "",
+                        motivators: ""
+                    },
+                    personality: ""}
                 """})
             
-            logging.info(
+            print(
                 f"Requested user persona analysis for call ID: {document['callId']}"
             )
 
@@ -327,13 +363,15 @@ def process_call_recording(document, user, expert, persona, user_calls):
                 model="gpt-4-turbo",
                 messages=message_history
             )
-            customer_persona = response.choices[0].message.content
+            customer_persona_response = response.choices[0].message.content
+            customer_persona = extract_json(customer_persona_response)
 
             # Print the assistant's response
-            print(f"Assistant: {customer_persona}")
+            print(f"Assistant: {customer_persona_response}")
 
             # Add the assistant's response to the conversation history
-            message_history.append({"role": "assistant", "content": customer_persona})
+            message_history.append(
+                {"role": "assistant", "content": customer_persona_response})
 
             return (
                 transcript,

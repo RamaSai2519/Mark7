@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+google-generativeai = "*"
+openai = "*"
+pymongo = "*"
+python-socketio = "*"
+requests = "*"
+schedule = "*"
+boto3 = "*"
+nltk = "*"
+pytz = "*"
+python-dotenv = "*"
+jq = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"

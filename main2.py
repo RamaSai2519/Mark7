@@ -41,7 +41,7 @@ while True:
                                 user} and {expert} on backup loop"
                         )
                         call_processed = process_call_data(
-                            call, user, expert, db, user_document, expert_document, user_calls)
+                            call, user, expert, user_document, expert_document, user_calls)
                         if not call_processed:
                             print("Call not processed")
                         else:
