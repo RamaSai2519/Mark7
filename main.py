@@ -35,7 +35,7 @@ with calls_collection.watch(pipeline) as stream:
                 user_calls = calls_collection.count_documents(
                     {"user": call["user"]})
                 call_processed = process_call_data(
-                    call, user, expert, db, user_document, user_calls)
+                    call, user, expert, user_document, expert_document, user_calls)
                 if not call_processed:
                     continue
                 updater(call["expert"], call["callId"])

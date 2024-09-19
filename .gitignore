@@ -33,3 +33,4 @@ Thumbs.db
 
 # Sensitive or high value files
 .env
+Pipfile.lock
