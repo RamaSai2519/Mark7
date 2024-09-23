@@ -38,7 +38,7 @@ with calls_collection.watch(pipeline) as stream:
                     call, user, expert, user_document, expert_document, user_calls)
                 if not call_processed:
                     continue
-                updater(call["expert"], call["callId"])
+                updater(str(call["expert"]), expert_document["phoneNumber"])
             except Exception as e:
                 error_message = f"An error occurred processing the call ({call.get('callId')}): {
                     str(e)} on main loop"

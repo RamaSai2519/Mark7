@@ -46,7 +46,7 @@ while True:
                             print("Call not processed")
                         else:
                             print("Call processed")
-                        updater(call["expert"], call["callId"])
+                        updater(str(call["expert"]), expert_document["phoneNumber"])
                     except Exception as e:
                         error_message = f"An error occurred processing the call ({call.get('callId')}): {
                             str(e)} on backup loop"

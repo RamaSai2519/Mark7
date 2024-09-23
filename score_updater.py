@@ -1,123 +1,14 @@
-from scores_extractor import calculate_average_scores
-from bson.objectid import ObjectId
-from config import (
-    callsmeta_collection,
-    experts_collection,
-    calls_collection,
-)
+from config import main_lambda_url as url
+import requests
+import json
 
 
-def updater(expert, callId):
-    calculate_average_scores(expert, callId)
+def updater(expert_id: str, expert_number: str) -> None:
+    payload = json.dumps({
+        "expert_id": "6604675f42f04a057fa20e09",
+        "expert_number": "7596938218"
+    })
+    headers = {'Content-Type': 'application/json'}
+    response = requests.request("POST", url, headers=headers, data=payload)
 
-    conversation_scores = {}
-    for call in calls_collection.find(
-        {"expert": ObjectId(expert), "Conversation Score": {"$exists": True}}
-    ):
-        expert_id = str(expert)
-        score = call.get("Conversation Score", 0.0)
-        score = float(score)
-        if score > 0.0:
-            conversation_scores.setdefault(expert_id, []).append(score)
-
-    average_conversation_scores = {}
-    for expert_id, scores in conversation_scores.items():
-        average_score = sum(scores) / len(scores) if scores else 0
-        average_conversation_scores[expert_id] = average_score
-        average_score = round(average_score, 1)
-        experts_collection.update_one(
-            {"_id": ObjectId(expert_id)}, {"$set": {"score": average_score}}
-        )
-
-    total_users_per_expert = {}
-    user_calls_to_experts = {}
-
-    calls = callsmeta_collection.find({"expert": ObjectId(expert)})
-
-    for call in calls:
-        expert_id = str(call["expert"])
-        user_id = str(call["user"])
-        total_users_per_expert.setdefault(expert_id, set()).add(user_id)
-        user_calls_to_experts.setdefault(user_id, set()).add(expert_id)
-
-    repeat_ratio_per_expert = {}
-    for expert_id in total_users_per_expert.keys():
-        total_users = len(total_users_per_expert[expert_id])
-        repeat_users = 0
-        for user_id in total_users_per_expert[expert_id]:
-            if len(
-                user_calls_to_experts.get(user_id, [])
-            ) > 1 and expert_id in user_calls_to_experts.get(user_id, []):
-                repeat_users += 1
-        repeat_ratio_per_expert[expert_id] = (
-            (repeat_users / total_users) * 100 if total_users != 0 else 0
-        )
-
-    for expert_id, repeat_ratio in repeat_ratio_per_expert.items():
-        total_users = total_users_per_expert.get(expert_id, [])
-        repeat_users = []
-        for user_id in total_users:
-            if len(
-                user_calls_to_experts.get(user_id, [])
-            ) > 1 and expert_id in user_calls_to_experts.get(user_id, []):
-                repeat_users.append(user_id)
-
-    for expert_id, repeat_ratio in repeat_ratio_per_expert.items():
-        total_users = total_users_per_expert.get(expert_id, [])
-        repeat_users = []
-        for user_id in total_users:
-            if len(
-                user_calls_to_experts.get(user_id, [])
-            ) > 1 and expert_id in user_calls_to_experts.get(user_id, []):
-                repeat_users.append(user_id)
-        repeat_ratio = int(repeat_ratio)
-
-    scores_per_expert = {}
-    for expert in experts_collection.find({"_id": expert}):
-        expert_id = str(expert.get("_id"))
-        score = expert.get("score", 0) * 20
-        scores_per_expert[expert_id] = score
-
-    calls_per_expert = {}
-    for call in callsmeta_collection.find({"expert": expert}):
-        expert_id = str(call.get("expert"))
-        calls_per_expert[expert_id] = calls_per_expert.get(expert_id, 0) + 1
-
-    total_calls = sum(calls_per_expert.values())
-
-    final_scores = {}
-    for expert_id in total_users_per_expert.keys():
-        repeat_score = repeat_ratio_per_expert.get(expert_id, 0)
-        repeat_score = int(repeat_score)
-        try:
-            experts_collection.update_one(
-                {"_id": ObjectId(expert_id)}, {
-                    "$set": {"repeat_score": repeat_score}}
-            )
-        except Exception as e:
-            print(f"Error updating expert's repeat score: {e}")
-        score = scores_per_expert.get(expert_id, 0)
-        score = int(score)
-        calls = calls_per_expert.get(expert_id, 0)
-        normalized_calls = (calls / total_calls) * \
-            100 if total_calls != 0 else 0
-        normalized_calls = round(normalized_calls, 2)
-        try:
-            experts_collection.update_one(
-                {"_id": ObjectId(expert_id)},
-                {"$set": {"calls_share": normalized_calls}},
-            )
-        except Exception as e:
-            print(f"Error updating calls share of expert: {e}")
-        final_score = (score + repeat_score + normalized_calls) / 3
-        final_scores[expert_id] = final_score
-
-    for expert_id, score in final_scores.items():
-        score = int(score)
-        calls = calls_per_expert.get(expert_id, 0)
-        try:
-            experts_collection.update_one(
-                {"_id": ObjectId(expert_id)}, {"$set": {"total_score": score}}
-            )
-        except Exception as e:
-            print(f"Error updating final score of expert: {e}")
+    print(response.text)
