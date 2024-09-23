@@ -13,7 +13,7 @@ client = MongoClient(
     os.getenv("MONGO_KEY")
 )
 
-main_lambda_url = os.getenv("MAIN_LAMBDA_URL")
+main_lambda_url = str(os.getenv("MAIN_LAMBDA_URL"))
 
 logging.info('APIKEY+'+os.getenv("MONGO_KEY"))
 
