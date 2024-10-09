@@ -21,7 +21,7 @@ while True:
                 int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
             )
             if seconds > 120:
-                conScore = call["Conversation Score"] if "Conversation Score" in call else None
+                conScore = call.get("conversationScore", None)
                 if conScore is None and call.get("recording_url") not in ["None", ""]:
                     print(f"Processing call {str(call["callId"])}")
                     try:
