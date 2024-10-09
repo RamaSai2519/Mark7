@@ -3,6 +3,7 @@ from config import db, calls_collection
 from score_updater import updater
 from notify import notify
 import logging
+import time
 
 # Configure logging
 logging.basicConfig(
@@ -53,3 +54,5 @@ while True:
                             str(e)} on backup loop"
                         notify(error_message)
                         continue
+                        
+    time.sleep(1800)
