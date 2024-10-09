@@ -7,7 +7,7 @@ pipeline = [
     {
         "$match": {
             "operationType": {"$in": ["insert", "update"]},
-            "fullDocument.status": "successfull",
+            "fullDocument.status": "successful",
         }
     }
 ]

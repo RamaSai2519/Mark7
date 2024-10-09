@@ -13,7 +13,7 @@ logging.basicConfig(
 
 print("Backup loop started")
 while True:
-    successful_calls = list(calls_collection.find({"status": "successfull"}))
+    successful_calls = list(calls_collection.find({"status": "successful"}))
     if successful_calls:
         for call in successful_calls:
             duration = call.get("duration", "00:00:00")
