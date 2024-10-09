@@ -16,13 +16,13 @@ while True:
     successful_calls = list(calls_collection.find({"status": "successful"}))
     if successful_calls:
         for call in successful_calls:
-            duration = call.get("duration", "00:00:00")
-            seconds = sum(
-                int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
-            )
-            if seconds > 120:
-                conScore = call.get("conversationScore", None)
-                if conScore is None and call.get("recording_url") not in ["None", ""]:
+            conScore = call.get("conversationScore", None)
+            if conScore is None and call.get("recording_url") not in ["None", ""]:
+                duration = call.get("duration", "00:00:00")
+                seconds = sum(
+                    int(x) * 60**i for i, x in enumerate(reversed(duration.split(":")))
+                )
+                if seconds > 120:
                     print(f"Processing call {str(call["callId"])}")
                     try:
                         user_document = db.users.find_one(
@@ -46,7 +46,8 @@ while True:
                             print("Call not processed")
                         else:
                             print("Call processed")
-                        updater(str(call["expert"]), expert_document["phoneNumber"])
+                        updater(str(call["expert"]),
+                                expert_document["phoneNumber"])
                     except Exception as e:
                         error_message = f"An error occurred processing the call ({call.get('callId')}): {
                             str(e)} on backup loop"
